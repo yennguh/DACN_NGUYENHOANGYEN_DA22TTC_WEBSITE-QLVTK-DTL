@@ -78,3 +78,13 @@ export const deleteUser = async (userId) => {
       throw error;
    }
 };
+
+export const googleLogin = async (credential) => {
+   try {
+      const response = await api.post('/v1/user/google-login', { credential });
+      return response.data;
+   } catch (error) {
+      console.error("Lỗi đăng nhập Google:", error.response?.data || error.message);
+      throw error;
+   }
+};

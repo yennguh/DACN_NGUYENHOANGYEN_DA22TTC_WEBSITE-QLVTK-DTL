@@ -8,7 +8,7 @@ const NOTIFICATION_COLLECTION_SCHEMA = Joi.object({
     userId: Joi.string().required(), // ID người nhận thông báo
     title: Joi.string().required(),
     message: Joi.string().required(),
-    type: Joi.string().valid('post_approved', 'post_rejected', 'item_found', 'message_received', 'system').default('system'),
+    type: Joi.string().valid('post_approved', 'post_rejected', 'item_found', 'item_not_found', 'message_received', 'comment', 'like', 'system').default('system'),
     relatedId: Joi.string().optional(), // ID liên quan (postId, contactId, etc.)
     isRead: Joi.boolean().default(false),
     createdAt: Joi.date().timestamp('javascript').default(Date.now)

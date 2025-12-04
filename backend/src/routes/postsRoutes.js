@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', postController.getPosts);
-router.get('/stats/top-posters', isAuth, postController.getTopPosters);
+router.get('/stats/top-posters', postController.getTopPosters); // Public - không cần đăng nhập
 router.get('/:id', postController.getPostById);
 // Like/unlike
 router.post('/:id/like', isAuth, postController.toggleLike);
@@ -21,6 +21,7 @@ router.patch('/:id/approve', isAuth, postController.approvePost);
 router.patch('/:id/reject', isAuth, postController.rejectPost);
 router.patch('/:id/mark-found', isAuth, postController.markItemFound);
 router.patch('/:id/mark-not-found', isAuth, postController.markItemNotFound);
+router.patch('/:id/return-status', isAuth, postController.updateReturnStatus);
 
 export default router;
 

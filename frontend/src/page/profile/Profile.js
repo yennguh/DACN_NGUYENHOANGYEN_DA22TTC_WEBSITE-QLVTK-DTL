@@ -5,6 +5,7 @@ import { User, Mail, Phone, Save, Edit2, Camera, X } from 'lucide-react';
 import { inforUser, updateUser } from '../../api/users.api';
 import { AuthContext } from '../../core/AuthContext';
 import { getImageUrl } from '../../utils/constant';
+import { ProfileSkeleton } from '../../core/LoadingSpinner';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -144,8 +145,11 @@ const Profile = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-xl">Đang tải...</div>
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-10 px-4">
+                <div className="max-w-2xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-8 text-gray-800">Hồ sơ cá nhân</h1>
+                    <ProfileSkeleton />
+                </div>
             </div>
         );
     }
@@ -161,85 +165,91 @@ const Profile = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-10 px-4">
             <div className="max-w-2xl mx-auto">
-                <h1 className="text-3xl font-bold mb-6 text-gray-800">Hồ sơ cá nhân</h1>
+                <h1 className="text-3xl font-bold mb-8 text-gray-800">Hồ sơ cá nhân</h1>
 
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-5 py-4 rounded-xl mb-6 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <X className="w-4 h-4 text-red-500" />
+                        </div>
                         {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 px-5 py-4 rounded-xl mb-6 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Save className="w-4 h-4 text-emerald-500" />
+                        </div>
                         {success}
                     </div>
                 )}
 
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                            {/* Avatar */}
-                            <div className="relative">
-                                {avatarPreview ? (
-                                    <img 
-                                        src={avatarPreview} 
-                                        alt="Avatar" 
-                                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
-                                        onError={(e) => {
-                                            try {
-                                                // Fallback nếu ảnh không load được
-                                                if (e && e.target) {
-                                                    if (e.target.style) e.target.style.display = 'none';
-                                                    const next = e.target.nextElementSibling;
-                                                    if (next && next.style) next.style.display = 'flex';
-                                                }
-                                            } catch (err) {
-                                                // swallow errors to avoid breaking the app
-                                                // log for debugging
-                                                // console.warn('Avatar onError handler failed', err);
-                                            }
-                                        }}
-                                    />
-                                ) : null}
-                                {!avatarPreview && (
-                                    <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center border-2 border-gray-200">
-                                        <User className="w-10 h-10 text-blue-600" />
-                                    </div>
-                                )}
-                                {isEditing && (
-                                    <div className="absolute -bottom-1 -right-1">
-                                        <label className="cursor-pointer">
-                                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition">
-                                                <Camera className="w-4 h-4 text-white" />
-                                            </div>
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleAvatarChange}
-                                                className="hidden"
-                                            />
-                                        </label>
-                                    </div>
-                                )}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    {/* Header với gradient */}
+                    <div className="bg-gradient-to-r from-blue-500 to-violet-500 h-24"></div>
+                    
+                    <div className="px-8 pb-8">
+                        {/* Avatar và info */}
+                        <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-12 mb-8">
+                            <div className="flex flex-col sm:flex-row items-center gap-5">
+                                {/* Avatar */}
+                                <div className="relative">
+                                    {avatarPreview ? (
+                                        <img 
+                                            src={avatarPreview} 
+                                            alt="Avatar" 
+                                            className="w-28 h-28 rounded-2xl object-cover border-4 border-white shadow-lg"
+                                            onError={(e) => {
+                                                try {
+                                                    if (e && e.target) {
+                                                        if (e.target.style) e.target.style.display = 'none';
+                                                        const next = e.target.nextElementSibling;
+                                                        if (next && next.style) next.style.display = 'flex';
+                                                    }
+                                                } catch (err) {}
+                                            }}
+                                        />
+                                    ) : null}
+                                    {!avatarPreview && (
+                                        <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center border-4 border-white shadow-lg">
+                                            <User className="w-12 h-12 text-blue-500" />
+                                        </div>
+                                    )}
+                                    {isEditing && (
+                                        <div className="absolute -bottom-2 -right-2">
+                                            <label className="cursor-pointer">
+                                                <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center hover:bg-blue-600 transition shadow-lg">
+                                                    <Camera className="w-5 h-5 text-white" />
+                                                </div>
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleAvatarChange}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="text-center sm:text-left mt-4 sm:mt-8">
+                                    <h2 className="text-2xl font-bold text-gray-800">{user.fullname}</h2>
+                                    <p className="text-gray-500">{user.email}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-800">{user.fullname}</h2>
-                                <p className="text-gray-600">{user.email}</p>
-                            </div>
+                            {!isEditing && (
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="mt-4 sm:mt-0 flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-sm"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                    Chỉnh sửa
+                                </button>
+                            )}
                         </div>
-                        {!isEditing && (
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                            >
-                                <Edit2 className="w-4 h-4" />
-                                Chỉnh sửa
-                            </button>
-                        )}
-                    </div>
 
                     {/* Avatar upload section khi editing */}
                     {isEditing && avatarFile && (
@@ -270,8 +280,8 @@ const Profile = () => {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* Full Name */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <User className="w-4 h-4 inline mr-2" />
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
+                                <User className="w-4 h-4 text-blue-500" />
                                 Họ và tên
                             </label>
                             {isEditing ? (
@@ -279,21 +289,21 @@ const Profile = () => {
                                     <input
                                         {...register("fullname", { required: "Họ tên là bắt buộc" })}
                                         type="text"
-                                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     />
                                     {errors.fullname && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.fullname.message}</p>
+                                        <p className="text-red-500 text-sm mt-2">{errors.fullname.message}</p>
                                     )}
                                 </>
                             ) : (
-                                <p className="text-gray-800 p-3 bg-gray-50 rounded-lg">{user.fullname}</p>
+                                <p className="text-gray-800 p-4 bg-gray-50 rounded-xl border border-gray-100">{user.fullname}</p>
                             )}
                         </div>
 
                         {/* Email */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <Mail className="w-4 h-4 inline mr-2" />
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
+                                <Mail className="w-4 h-4 text-blue-500" />
                                 Email
                             </label>
                             {isEditing ? (
@@ -307,21 +317,21 @@ const Profile = () => {
                                             }
                                         })}
                                         type="email"
-                                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     />
                                     {errors.email && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                                        <p className="text-red-500 text-sm mt-2">{errors.email.message}</p>
                                     )}
                                 </>
                             ) : (
-                                <p className="text-gray-800 p-3 bg-gray-50 rounded-lg">{user.email}</p>
+                                <p className="text-gray-800 p-4 bg-gray-50 rounded-xl border border-gray-100">{user.email}</p>
                             )}
                         </div>
 
                         {/* Phone */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                <Phone className="w-4 h-4 inline mr-2" />
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-2">
+                                <Phone className="w-4 h-4 text-blue-500" />
                                 Số điện thoại
                             </label>
                             {isEditing ? (
@@ -334,23 +344,23 @@ const Profile = () => {
                                             }
                                         })}
                                         type="tel"
-                                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     />
                                     {errors.phone && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+                                        <p className="text-red-500 text-sm mt-2">{errors.phone.message}</p>
                                     )}
                                 </>
                             ) : (
-                                <p className="text-gray-800 p-3 bg-gray-50 rounded-lg">{user.phone || 'Chưa cập nhật'}</p>
+                                <p className="text-gray-800 p-4 bg-gray-50 rounded-xl border border-gray-100">{user.phone || 'Chưa cập nhật'}</p>
                             )}
                         </div>
 
                         {/* Action buttons */}
                         {isEditing && (
-                            <div className="flex gap-4 pt-4">
+                            <div className="flex gap-4 pt-6">
                                 <button
                                     type="submit"
-                                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-sm"
                                 >
                                     <Save className="w-4 h-4" />
                                     Lưu thay đổi
@@ -368,13 +378,14 @@ const Profile = () => {
                                             fileInputRef.current.value = '';
                                         }
                                     }}
-                                    className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    className="px-6 py-3 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors"
                                 >
                                     Hủy
                                 </button>
                             </div>
                         )}
                     </form>
+                    </div>
                 </div>
             </div>
         </div>

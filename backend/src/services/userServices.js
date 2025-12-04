@@ -64,11 +64,41 @@ const DeleteUser = async (id) => {
     }
 }
 
+const GetUserByEmail = async (email) => {
+    try {
+        const result = await USERMODEL.FindUserByEmail(email);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const CreatedUserGoogle = async (payload) => {
+    try {
+        const result = await USERMODEL.CreatedUserGoogle(payload);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const UpdateUserGoogleId = async (id, googleId, avatar) => {
+    try {
+        const result = await USERMODEL.UpdateUserGoogleId(id, googleId, avatar);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const userServices = {
     CreatedUser,
     GetUserInfor,
     Login_User,
     ListUsers,
     UpdateUser,
-    DeleteUser
+    DeleteUser,
+    GetUserByEmail,
+    CreatedUserGoogle,
+    UpdateUserGoogleId
 }

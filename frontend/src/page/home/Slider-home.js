@@ -6,6 +6,7 @@
 // 3) Provide images as URLs or local imports.
 
 import React, { useEffect, useRef, useState } from 'react';
+import PrivacyImage from '../../components/PrivacyImage';
 
 export default function ImageSlider({ images = [], autoPlayInterval = 5000, className = '' }) {
     const [index, setIndex] = useState(0);
@@ -73,10 +74,11 @@ export default function ImageSlider({ images = [], autoPlayInterval = 5000, clas
                     <div className="w-full flex items-center justify-center p-12 bg-gray-100 text-gray-500">No images provided</div>
                 ) : images.map((src, i) => (
                     <div key={i} className="w-full flex-shrink-0 relative">
-                        <img
+                        <PrivacyImage
                             src={src}
                             alt={`slide-${i + 1}`}
                             className="w-full h-[520px] object-cover"
+                            blur={true}
                         />
                     </div>
                 ))}

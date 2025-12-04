@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchPosts } from '../../api/posts.api';
 import { AuthContext } from '../../core/AuthContext';
+import { LoadingSpinner } from '../../core/LoadingSpinner';
 
 const STATUS_LABEL = {
   approved: { text: 'Đã duyệt', className: 'bg-green-100 text-green-700' },
@@ -12,7 +13,7 @@ const STATUS_LABEL = {
 
 export default function MyPosts() {
   const navigate = useNavigate();
-  const { user, token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -57,7 +58,10 @@ export default function MyPosts() {
 
         <div className="bg-white rounded shadow p-4">
           {loading ? (
-            <div>Đang tải...</div>
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner size="lg" />
+              <span className="ml-3 text-gray-500">Đang tải bài đăng...</span>
+            </div>
           ) : posts.length === 0 ? (
             <div className="text-gray-600">Không có bài đăng nào.</div>
           ) : (

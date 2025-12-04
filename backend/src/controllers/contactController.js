@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { contactServices } from "../services/contactServices.js";
+import { notificationServices } from "../services/notificationServices.js";
 
 const createContact = async (req, res, next) => {
     try {
@@ -74,6 +75,22 @@ const addReply = async (req, res, next) => {
         };
 
         const result = await contactServices.addReply(id, replyData);
+
+        // Gửi thông báo cho user khi admin phản hồi
+        if (isAdmin && result?.userId) {
+            try {
+                await notificationServices.createNotification({
+                    userId: result.userId,
+                    title: 'Phản hồi từ Admin',
+                    message: `Admin đã phản hồi tin nhắn của bạn: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`,
+                    type: 'message_received',
+                    relatedId: id
+                });
+            } catch (notifyError) {
+                console.error('Failed to create reply notification:', notifyError);
+            }
+        }
+
         res.status(StatusCodes.OK).json({
             message: 'Reply sent successfully',
             data: result

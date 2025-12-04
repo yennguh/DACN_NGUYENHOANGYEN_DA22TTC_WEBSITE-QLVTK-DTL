@@ -25,7 +25,7 @@ const createComment = async (req, res, next) => {
                         userId: post.userId,
                         title: 'Bình luận mới',
                         message: `Có bình luận mới trên bài đăng của bạn: ${post.title}`,
-                        type: 'system',
+                        type: 'comment',
                         relatedId: payload.postId
                     });
                 }
@@ -92,9 +92,75 @@ const deleteComment = async (req, res, next) => {
     }
 };
 
+const toggleLike = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded._id) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
+        }
+
+        const { id } = req.params;
+        const result = await commentServices.toggleLike(id, decoded._id);
+        
+        if (!result) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Comment not found' });
+        }
+
+        return res.status(StatusCodes.OK).json({ message: 'Toggled like', data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const replyComment = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded._id) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
+        }
+
+        const { id } = req.params; // parent comment id
+        const parentComment = await commentServices.getCommentById(id);
+        if (!parentComment) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Parent comment not found' });
+        }
+
+        const payload = {
+            postId: parentComment.postId,
+            userId: decoded._id,
+            content: req.body.content,
+            parentId: id
+        };
+
+        const result = await commentServices.createComment(payload);
+
+        // Tạo notification cho người được reply
+        if (parentComment.userId && parentComment.userId !== decoded._id) {
+            try {
+                const post = await postServices.getPostById(parentComment.postId);
+                await notificationServices.createNotification({
+                    userId: parentComment.userId,
+                    title: 'Trả lời bình luận',
+                    message: `${decoded.fullname || 'Một người dùng'} đã trả lời bình luận của bạn${post ? ` trong bài "${post.title}"` : ''}`,
+                    type: 'comment',
+                    relatedId: parentComment.postId
+                });
+            } catch (notifyErr) {
+                console.error('Failed to create reply notification', notifyErr);
+            }
+        }
+
+        return res.status(StatusCodes.CREATED).json({ message: 'Reply created', data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const commentController = {
     createComment,
     getCommentsByPostId,
     updateComment,
-    deleteComment
+    deleteComment,
+    toggleLike,
+    replyComment
 };

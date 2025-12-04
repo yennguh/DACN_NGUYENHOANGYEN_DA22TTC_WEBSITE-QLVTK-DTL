@@ -3,6 +3,10 @@ import { jwtHelper } from "../config/jwt.js";
 import { userServices } from "../services/userServices.js";
 import { GET_DB } from "../config/mongodb.js";
 import { ObjectId } from "mongodb";
+import { OAuth2Client } from 'google-auth-library';
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 // Thời gian sống của token
 const accessTokenLife = process.env.ACCESS_TOKEN_LIFE || "240hr";
 // Mã secretKey này phải được bảo mật tuyệt đối, các bạn có thể lưu vào biến môi trường hoặc file
@@ -216,6 +220,75 @@ const DeleteUser = async (req, res, next) => {
     }
 }
 
+const GoogleLogin = async (req, res, next) => {
+    try {
+        const { credential } = req.body;
+        
+        if (!credential) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Google credential is required' });
+        }
+
+        // Verify Google token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub: googleId } = payload;
+
+        // Check if user exists
+        let user = await userServices.GetUserByEmail(email);
+        
+        if (!user) {
+            // Create new user with Google info
+            const newUserData = {
+                email,
+                fullname: name,
+                avatar: picture,
+                googleId,
+                password: null, // No password for Google users
+                roles: ['user'],
+                phone: ''
+            };
+            await userServices.CreatedUserGoogle(newUserData);
+            user = await userServices.GetUserByEmail(email);
+        } else {
+            // Update Google info if needed
+            if (!user.googleId) {
+                await userServices.UpdateUserGoogleId(user._id, googleId, picture);
+            }
+        }
+
+        // Generate tokens
+        const tokenPayload = {
+            _id: user._id.toString(),
+            email: user.email,
+            fullname: user.fullname,
+            roles: user.roles
+        };
+        
+        const accessToken = await jwtHelper.generateToken(tokenPayload, accessTokenSecret, accessTokenLife);
+        const refreshToken = await jwtHelper.generaterefresh(tokenPayload, refreshTokenSecret, refreshTokenLife);
+
+        return res.status(StatusCodes.OK).json({
+            accessToken,
+            refreshToken,
+            user: {
+                fullname: user.fullname,
+                email: user.email,
+                avatar: user.avatar
+            }
+        });
+    } catch (error) {
+        console.error('Google login error:', error);
+        return res.status(StatusCodes.UNAUTHORIZED).json({ 
+            message: 'Google authentication failed',
+            error: error.message 
+        });
+    }
+}
+
 export const userController = {
     CreatedUser,
     Login,
@@ -223,5 +296,6 @@ export const userController = {
     refreshToken,
     ListUsers,
     UpdateUser,
-    DeleteUser
+    DeleteUser,
+    GoogleLogin
 }

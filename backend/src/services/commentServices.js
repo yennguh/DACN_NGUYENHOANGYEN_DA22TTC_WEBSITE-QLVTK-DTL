@@ -54,10 +54,20 @@ const deleteComment = async (id) => {
     }
 };
 
+const toggleLike = async (commentId, userId) => {
+    try {
+        const result = await COMMENTMODEL.toggleLike(commentId, userId);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const commentServices = {
     createComment,
     getCommentsByPostId,
     getCommentById,
     updateComment,
-    deleteComment
+    deleteComment,
+    toggleLike
 };

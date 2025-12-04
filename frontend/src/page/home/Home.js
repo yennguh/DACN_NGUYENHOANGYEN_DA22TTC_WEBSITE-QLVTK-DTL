@@ -12,10 +12,10 @@ export default function Home() {
   useEffect(() => {
     const loadImages = async () => {
       try {
+        // Lấy ảnh từ tất cả bài đăng đã được admin duyệt
         const response = await fetchPosts({
           status: 'approved',
-          category: 'lost',
-          limit: 10,
+          limit: 20,
         });
 
         if (response?.data) {
@@ -24,7 +24,8 @@ export default function Home() {
             .filter((src) => typeof src === 'string' && src.trim() !== '');
 
           if (images.length > 0) {
-            setSliderImages(images);
+            // Lấy tối đa 10 ảnh cho slider
+            setSliderImages(images.slice(0, 10));
           } else {
             setSliderImages(fallbackImages);
           }

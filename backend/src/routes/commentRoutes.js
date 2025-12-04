@@ -14,4 +14,10 @@ router.post('/', isAuth, commentController.createComment);
 router.put('/:id', isAuth, commentController.updateComment);
 router.delete('/:id', isAuth, commentController.deleteComment);
 
+// Protected: like/unlike comment
+router.post('/:id/like', isAuth, commentController.toggleLike);
+
+// Protected: reply to comment
+router.post('/:id/reply', isAuth, commentController.replyComment);
+
 export default router;

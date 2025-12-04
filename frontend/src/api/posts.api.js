@@ -120,3 +120,13 @@ export const markItemNotFound = async (id) => {
     }
 };
 
+export const updateReturnStatus = async (id, returnStatus) => {
+    try {
+        const response = await api.patch(`/v1/posts/${id}/return-status`, { returnStatus });
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi cập nhật trạng thái trả:", error.response?.data || error.message);
+        throw error;
+    }
+};
+

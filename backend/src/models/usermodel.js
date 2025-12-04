@@ -137,11 +137,65 @@ const DeleteUser = async (id) => {
     }
 }
 
+const FindUserByEmail = async (email) => {
+    try {
+        const result = await GET_DB()
+            .collection(User_COLLECTION_NAME)
+            .findOne({ email: email });
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const CreatedUserGoogle = async (payload) => {
+    try {
+        const userData = {
+            email: payload.email,
+            fullname: payload.fullname,
+            avatar: payload.avatar || null,
+            googleId: payload.googleId,
+            password: null,
+            phone: payload.phone || '',
+            roles: payload.roles || ['user'],
+            createdAt: Date.now(),
+            updateAt: null
+        };
+        const result = await GET_DB()
+            .collection(User_COLLECTION_NAME)
+            .insertOne(userData);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const UpdateUserGoogleId = async (id, googleId, avatar) => {
+    try {
+        const updateData = { googleId, updateAt: Date.now() };
+        if (avatar) updateData.avatar = avatar;
+        
+        const result = await GET_DB()
+            .collection(User_COLLECTION_NAME)
+            .findOneAndUpdate(
+                { _id: new ObjectId(id) },
+                { $set: updateData },
+                { returnDocument: 'after' }
+            );
+        return result.value;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const USERMODEL = {
     CreatedUser,
     FindUserById,
     Login,
     ListUsers,
     UpdateUser,
-    DeleteUser
+    DeleteUser,
+    FindUserByEmail,
+    CreatedUserGoogle,
+    UpdateUserGoogleId
 }

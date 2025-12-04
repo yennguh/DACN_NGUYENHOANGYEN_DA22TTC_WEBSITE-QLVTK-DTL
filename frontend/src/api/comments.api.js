@@ -39,3 +39,23 @@ export const deleteComment = async (id) => {
         throw error;
     }
 };
+
+export const toggleLikeComment = async (id) => {
+    try {
+        const response = await api.post(`/v1/comments/${id}/like`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi like bình luận:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+export const replyComment = async (id, content) => {
+    try {
+        const response = await api.post(`/v1/comments/${id}/reply`, { content });
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi trả lời bình luận:', error.response?.data || error.message);
+        throw error;
+    }
+};

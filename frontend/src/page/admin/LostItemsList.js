@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Trash2, CheckCircle, XCircle, Clock, Package, MapPin } from 'lucide-react';
-import { fetchPosts, deletePost, approvePost, rejectPost } from '../../api/posts.api';
+import { Search, Eye, Trash2, Check, X, Package, Send, RotateCcw, CircleAlert, HandHelping } from 'lucide-react';
+import { getImageUrl } from '../../utils/constant';
+import { fetchPosts, deletePost, approvePost, rejectPost, updateReturnStatus } from '../../api/posts.api';
 import AdminSection from './components/AdminSection';
 
 export default function LostItemsList() {
@@ -9,33 +10,24 @@ export default function LostItemsList() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [deleteConfirm, setDeleteConfirm] = useState(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
 
-    const fetchData = async (page = 1) => {
+    // Chia bài đăng theo category
+    const lostPosts = posts.filter(p => p.category === 'lost');
+    const foundPosts = posts.filter(p => p.category === 'found');
+
+    const fetchData = async () => {
         setLoading(true);
         try {
             const params = {
-                page,
-                limit: 20,
-                ...(categoryFilter && { category: categoryFilter }),
+                page: 1,
+                limit: 100,
                 ...(statusFilter && { status: statusFilter }),
                 ...(searchTerm && { search: searchTerm })
             };
             const result = await fetchPosts(params);
             if (result && result.data) {
                 setPosts(result.data);
-                if (result.pagination) {
-                    setPagination(prev => ({
-                        ...prev,
-                        page: result.pagination.page || page,
-                        total: result.pagination.total || 0,
-                        totalPages: result.pagination.totalPages || 0
-                    }));
-                }
             } else {
                 setPosts([]);
             }
@@ -48,298 +40,214 @@ export default function LostItemsList() {
     };
 
     useEffect(() => {
-        fetchData(1);
+        fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoryFilter, statusFilter]);
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        fetchData(1);
-    };
-
-    const handleDeleteClick = (post) => {
-        setDeleteConfirm(post);
-    };
-
-    const handleDeleteCancel = () => {
-        setDeleteConfirm(null);
-    };
-
-    const handleDeleteConfirm = async () => {
-        if (!deleteConfirm) return;
-        
-        setIsDeleting(true);
-        try {
-            await deletePost(deleteConfirm._id);
-            await fetchData(pagination.page);
-            setDeleteConfirm(null);
-            alert('Xóa bài đăng thành công!');
-        } catch (error) {
-            console.error('Lỗi xóa bài đăng:', error);
-            alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa bài đăng');
-        } finally {
-            setIsDeleting(false);
-        }
-    };
+    }, [statusFilter, searchTerm]);
 
     const handleApprove = async (postId) => {
         try {
             await approvePost(postId);
-            await fetchData(pagination.page);
-            alert('Duyệt bài đăng thành công!');
+            fetchData();
         } catch (error) {
-            console.error('Lỗi duyệt bài đăng:', error);
-            alert(error.response?.data?.message || 'Có lỗi xảy ra khi duyệt bài đăng');
+            alert('Có lỗi xảy ra khi duyệt bài đăng');
         }
     };
 
     const handleReject = async (postId) => {
         try {
             await rejectPost(postId);
-            await fetchData(pagination.page);
-            alert('Từ chối bài đăng thành công!');
+            fetchData();
         } catch (error) {
-            console.error('Lỗi từ chối bài đăng:', error);
-            alert(error.response?.data?.message || 'Có lỗi xảy ra khi từ chối bài đăng');
+            alert('Có lỗi xảy ra khi từ chối bài đăng');
         }
     };
 
-    const getStatusBadge = (status) => {
-        const badges = {
-            pending: { text: 'Chờ duyệt', class: 'bg-yellow-100 text-yellow-700' },
-            approved: { text: 'Đã duyệt', class: 'bg-green-100 text-green-700' },
-            rejected: { text: 'Đã từ chối', class: 'bg-red-100 text-red-700' }
-        };
-        const badge = badges[status] || { text: status, class: 'bg-gray-100 text-gray-700' };
-        return (
-            <span className={`px-2 py-1 text-xs rounded-full ${badge.class}`}>
-                {badge.text}
-            </span>
-        );
+    const handleDelete = async (postId) => {
+        if (!window.confirm('Xóa bài đăng này?')) return;
+        try {
+            await deletePost(postId);
+            fetchData();
+        } catch (error) {
+            alert('Có lỗi xảy ra khi xóa bài đăng');
+        }
     };
 
-    const getCategoryBadge = (category) => {
-        return category === 'lost' ? (
-            <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">Đồ thất lạc</span>
-        ) : (
-            <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">Đồ nhặt được</span>
-        );
+    const handleMarkReturned = async (postId) => {
+        try {
+            await updateReturnStatus(postId, 'gửi trả');
+            fetchData();
+        } catch (error) {
+            alert('Có lỗi xảy ra');
+        }
     };
 
-    return (
-        <AdminSection
-            title="Danh sách đồ thất lạc"
-            description="Theo dõi và quản lý tất cả các đồ thất lạc đã tiếp nhận."
-        >
-            <div className="space-y-4">
-                {/* Search and Filters */}
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <form onSubmit={handleSearch} className="flex flex-wrap gap-4 items-end">
-                        <div className="flex-1 min-w-[200px]">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Tìm theo tiêu đề, mô tả..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-                            </div>
-                        </div>
-                        <div className="min-w-[150px]">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Loại tin</label>
-                            <select
-                                value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            >
-                                <option value="">Tất cả</option>
-                                <option value="lost">Đồ thất lạc</option>
-                                <option value="found">Đồ nhặt được</option>
-                            </select>
-                        </div>
-                        <div className="min-w-[150px]">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            >
-                                <option value="">Tất cả</option>
-                                <option value="pending">Chờ duyệt</option>
-                                <option value="approved">Đã duyệt</option>
-                                <option value="rejected">Đã từ chối</option>
-                            </select>
-                        </div>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            Tìm kiếm
-                        </button>
-                    </form>
-                </div>
+    const handleMarkNotFound = async (postId) => {
+        try {
+            await updateReturnStatus(postId, 'chưa tìm thấy');
+            fetchData();
+        } catch (error) {
+            alert('Có lỗi xảy ra');
+        }
+    };
 
-                {/* Table */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    {loading ? (
-                        <div className="p-8 text-center text-gray-500">Đang tải...</div>
-                    ) : posts.length === 0 ? (
-                        <div className="p-8 text-center text-gray-500">Không có bài đăng nào</div>
-                    ) : (
-                        <>
-                            <div className="overflow-x-auto">
-                                <table className="w-full table-auto">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="text-left p-4 text-sm font-semibold text-gray-700">Tiêu đề</th>
-                                            <th className="text-left p-4 text-sm font-semibold text-gray-700">Loại</th>
-                                            <th className="text-left p-4 text-sm font-semibold text-gray-700">Đồ vật</th>
-                                            <th className="text-left p-4 text-sm font-semibold text-gray-700">Vị trí</th>
-                                            <th className="text-left p-4 text-sm font-semibold text-gray-700">Trạng thái</th>
-                                            <th className="text-left p-4 text-sm font-semibold text-gray-700">Ngày đăng</th>
-                                            <th className="text-right p-4 text-sm font-semibold text-gray-700">Hành động</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {posts.map((post) => (
-                                            <tr key={post._id} className="border-t hover:bg-gray-50 transition-colors">
-                                                <td className="p-4">
-                                                    <div className="font-medium text-gray-900 max-w-xs truncate" title={post.title}>
-                                                        {post.title}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4">
-                                                    {getCategoryBadge(post.category)}
-                                                </td>
-                                                <td className="p-4 text-sm text-gray-600">
-                                                    <div className="flex items-center gap-1">
-                                                        <Package className="w-4 h-4" />
-                                                        {post.itemType || 'N/A'}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-sm text-gray-600">
-                                                    <div className="flex items-center gap-1">
-                                                        <MapPin className="w-4 h-4" />
-                                                        {post.location || 'N/A'}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4">
-                                                    {getStatusBadge(post.status)}
-                                                </td>
-                                                <td className="p-4 text-sm text-gray-600">
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock className="w-4 h-4" />
-                                                        {new Date(post.createdAt).toLocaleDateString('vi-VN')}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() => navigate(`/admin/posts/${post._id}`)}
-                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                                            title="Xem chi tiết"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                        </button>
-                                                        {post.status === 'pending' && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => handleApprove(post._id)}
-                                                                    className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
-                                                                    title="Duyệt bài đăng"
-                                                                >
-                                                                    <CheckCircle className="w-4 h-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleReject(post._id)}
-                                                                    className="p-2 text-orange-600 hover:bg-orange-50 rounded transition-colors"
-                                                                    title="Từ chối bài đăng"
-                                                                >
-                                                                    <XCircle className="w-4 h-4" />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleDeleteClick(post)}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                            title="Xóa bài đăng"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Pagination */}
-                            {pagination.totalPages > 1 && (
-                                <div className="flex items-center justify-between p-4 border-t">
-                                    <div className="text-sm text-gray-600">
-                                        Hiển thị {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} của {pagination.total} bài đăng
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => fetchData(pagination.page - 1)}
-                                            disabled={pagination.page === 1}
-                                            className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Trước
-                                        </button>
-                                        <span className="px-4 py-2 text-sm text-gray-600">
-                                            Trang {pagination.page} / {pagination.totalPages}
-                                        </span>
-                                        <button
-                                            onClick={() => fetchData(pagination.page + 1)}
-                                            disabled={pagination.page >= pagination.totalPages}
-                                            className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Sau
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
+    // Component bảng dùng chung
+    const PostTable = ({ data, title, icon: Icon, headerColor }) => (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className={`p-4 border-b ${headerColor} flex items-center gap-3`}>
+                <Icon className="w-5 h-5" />
+                <h2 className="font-bold text-lg">{title}</h2>
+                <span className="ml-auto bg-white/20 px-3 py-1 rounded-full text-sm font-medium">{data.length} bài</span>
             </div>
-
-            {/* Delete Confirmation Dialog */}
-            {deleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black opacity-40" onClick={handleDeleteCancel}></div>
-                    <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold mb-4">Xác nhận xóa bài đăng</h3>
-                        <p className="text-gray-600 mb-6">
-                            Bạn có chắc chắn muốn xóa bài đăng <strong>{deleteConfirm.title}</strong>?
-                            <br />
-                            <span className="text-red-600 text-sm mt-2 block">Hành động này không thể hoàn tác!</span>
-                        </p>
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={handleDeleteCancel}
-                                disabled={isDeleting}
-                                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={handleDeleteConfirm}
-                                disabled={isDeleting}
-                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
-                            >
-                                {isDeleting ? 'Đang xóa...' : 'Xóa'}
-                            </button>
-                        </div>
-                    </div>
+            {data.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">Không có bài đăng nào</div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-50/80">
+                            <tr>
+                                <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-4">Tiêu đề</th>
+                                <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-4">Người đăng</th>
+                                <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-4">Loại đồ</th>
+                                <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-4">Vị trí</th>
+                                <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-4">Ngày</th>
+                                <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-4">Trạng thái</th>
+                                <th className="text-left text-xs font-semibold text-gray-500 uppercase py-3 px-4">Trả đồ</th>
+                                <th className="text-right text-xs font-semibold text-gray-500 uppercase py-3 px-4">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {data.map((item) => (
+                                <tr key={item._id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-3 px-4">
+                                        <p className="font-medium text-gray-800 max-w-[150px] truncate">{item.title}</p>
+                                    </td>
+                                    <td className="py-3 px-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                {item.user?.avatar ? (
+                                                    <img src={getImageUrl(item.user.avatar)} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-white text-xs font-bold">{(item.authorFullname || item.user?.fullname || 'U').charAt(0).toUpperCase()}</span>
+                                                )}
+                                            </div>
+                                            <span className="text-gray-700 text-sm">{item.authorFullname || item.user?.fullname || 'Ẩn danh'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-4 text-gray-600 text-sm">{item.itemType}</td>
+                                    <td className="py-3 px-4 text-gray-600 text-sm">{item.location}</td>
+                                    <td className="py-3 px-4 text-gray-500 text-sm">{new Date(item.createdAt).toLocaleDateString('vi-VN')}</td>
+                                    <td className="py-3 px-4">
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                            item.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                            item.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                            item.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                                        }`}>
+                                            {item.status === 'approved' ? 'Đã duyệt' : item.status === 'pending' ? 'Chờ duyệt' : item.status === 'rejected' ? 'Từ chối' : 'Hoàn thành'}
+                                        </span>
+                                    </td>
+                                    <td className="py-3 px-4">
+                                        {item.returnStatus === 'gửi trả' ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Đã trả</span>
+                                        ) : item.returnStatus === 'chưa tìm thấy' ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Chưa thấy</span>
+                                        ) : (
+                                            <span className="text-gray-400 text-sm">—</span>
+                                        )}
+                                    </td>
+                                    <td className="py-3 px-4">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <button onClick={() => navigate(`/admin/posts/${item._id}`)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Xem">
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                            {item.status === 'pending' && (
+                                                <>
+                                                    <button onClick={() => handleApprove(item._id)} className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Duyệt">
+                                                        <Check className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => handleReject(item._id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Từ chối">
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                            {item.status === 'approved' && (
+                                                <>
+                                                    <button onClick={() => handleMarkReturned(item._id)} className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Đã trả">
+                                                        <Send className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => handleMarkNotFound(item._id)} className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg" title="Chưa thấy">
+                                                        <RotateCcw className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                            <button onClick={() => handleDelete(item._id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Xóa">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
+        </div>
+    );
+
+    return (
+        <AdminSection title="Danh sách đồ thất lạc">
+            <div className="space-y-6">
+                {/* Search and Filters */}
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex-1 relative min-w-[200px] max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="pending">Chờ duyệt</option>
+                        <option value="approved">Đã duyệt</option>
+                        <option value="rejected">Từ chối</option>
+                    </select>
+                    <div className="text-sm text-gray-600">
+                        Tổng: <span className="font-bold text-blue-600">{posts.length}</span> bài đăng
+                    </div>
+                </div>
+
+                {loading ? (
+                    <div className="text-center py-12">
+                        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <div className="text-gray-500">Đang tải...</div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Bảng Đồ bị mất */}
+                        <PostTable 
+                            data={lostPosts} 
+                            title="🔍 Đồ bị mất" 
+                            icon={CircleAlert}
+                            headerColor="bg-gradient-to-r from-red-500 to-orange-500 text-white"
+                        />
+
+                        {/* Bảng Đồ nhặt được */}
+                        <PostTable 
+                            data={foundPosts} 
+                            title="✨ Đồ nhặt được" 
+                            icon={HandHelping}
+                            headerColor="bg-gradient-to-r from-green-500 to-teal-500 text-white"
+                        />
+                    </>
+                )}
+            </div>
         </AdminSection>
     );
 }
-

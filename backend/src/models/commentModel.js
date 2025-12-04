@@ -8,6 +8,8 @@ const COMMENT_COLLECTION_SCHEMA = Joi.object({
     postId: Joi.string().required(),
     userId: Joi.string().required(),
     content: Joi.string().required(),
+    parentId: Joi.string().allow(null).default(null), // ID của comment cha (nếu là reply)
+    likes: Joi.array().items(Joi.string()).default([]), // Danh sách userId đã like
     createdAt: Joi.date().timestamp('javascript').default(Date.now),
     updatedAt: Joi.date().timestamp('javascript').default(null)
 });
@@ -70,13 +72,16 @@ const findCommentsByPostId = async (postId, { page = 1, limit = 50 } = {}) => {
                     content: 1,
                     postId: 1,
                     userId: 1,
+                    parentId: 1,
+                    likes: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     user: {
                         _id: '$user._id',
                         fullname: '$user.fullname',
                         email: '$user.email',
-                        phone: '$user.phone'
+                        phone: '$user.phone',
+                        avatar: '$user.avatar'
                     }
                 }
             }
@@ -124,10 +129,34 @@ const deleteComment = async (id) => {
     }
 };
 
+const toggleLike = async (commentId, userId) => {
+    try {
+        const comment = await GET_DB().collection(COMMENT_COLLECTION_NAME).findOne({ _id: new ObjectId(commentId) });
+        if (!comment) return null;
+
+        const likes = comment.likes || [];
+        const hasLiked = likes.includes(userId);
+
+        const update = hasLiked
+            ? { $pull: { likes: userId } }
+            : { $addToSet: { likes: userId } };
+
+        const result = await GET_DB().collection(COMMENT_COLLECTION_NAME).findOneAndUpdate(
+            { _id: new ObjectId(commentId) },
+            update,
+            { returnDocument: 'after' }
+        );
+        return result;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const COMMENTMODEL = {
     createComment,
     findCommentsByPostId,
     findCommentById,
     updateComment,
-    deleteComment
+    deleteComment,
+    toggleLike
 };

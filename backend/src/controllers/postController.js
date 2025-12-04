@@ -241,7 +241,7 @@ const toggleLike = async (req, res, next) => {
                     userId: post.userId,
                     title: 'Bài đăng được thích',
                     message: `${decoded.fullname || 'Một người dùng'} đã thích bài đăng của bạn: ${post.title}`,
-                    type: 'system',
+                    type: 'like',
                     relatedId: id
                 });
             } catch (notifyErr) {
@@ -334,6 +334,56 @@ const markItemNotFound = async (req, res, next) => {
     }
 };
 
+const updateReturnStatus = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { returnStatus } = req.body;
+        const decoded = req.jwtDecoded;
+        
+        if (!decoded.roles?.includes('admin')) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'Only admin can update return status' });
+        }
+
+        if (!returnStatus || !['gửi trả', 'chưa tìm thấy'].includes(returnStatus)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid return status. Must be "gửi trả" or "chưa tìm thấy"' });
+        }
+
+        const post = await postServices.getPostById(id);
+        if (!post) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Post not found' });
+        }
+
+        const result = await postServices.updatePost(id, { returnStatus });
+
+        // Gửi thông báo cho người đăng
+        if (post.userId && post.userId !== decoded._id) {
+            try {
+                const title = returnStatus === 'gửi trả' ? 'Đồ vật đã được trả' : 'Cập nhật trạng thái đồ vật';
+                const message = returnStatus === 'gửi trả' 
+                    ? `Đồ vật "${post.title}" đã được xác nhận trả lại cho chủ sở hữu.`
+                    : `Đồ vật "${post.title}" được cập nhật trạng thái: chưa tìm thấy.`;
+                
+                await notificationServices.createNotification({
+                    userId: post.userId,
+                    title,
+                    message,
+                    type: returnStatus === 'gửi trả' ? 'item_found' : 'item_not_found',
+                    relatedId: id
+                });
+            } catch (notifyError) {
+                console.error('Failed to create return status notification:', notifyError);
+            }
+        }
+
+        res.status(StatusCodes.OK).json({
+            message: 'Return status updated successfully',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const postController = {
     createPost,
     getPostById,
@@ -345,6 +395,7 @@ export const postController = {
     rejectPost,
     toggleLike,
     markItemFound,
-    markItemNotFound
+    markItemNotFound,
+    updateReturnStatus
 };
 

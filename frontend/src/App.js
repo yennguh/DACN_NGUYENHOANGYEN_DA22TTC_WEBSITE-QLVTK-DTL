@@ -5,19 +5,13 @@ import Content from './layout/Content';
 import LoginPage from './page/auth/LoginPage';
 import RegisterPage from './page/auth/RegisterPage';
 import MainLayout from './layout/Mainlayout';
-import LostItemDetail from './page/lost/LostItemDetail';
 import Dashboard from './page/admin/Dashboard';
 import LayoutAdmin from './layout/LayoutAdmin';
-import Report from './page/admin/Report';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Roles from './page/admin/Roles';
 import LostItemsList from './page/admin/LostItemsList';
 import LostItemCreate from './page/admin/LostItemCreate';
-import LostItemSearch from './page/admin/LostItemSearch';
 import FoundItemsList from './page/admin/FoundItemsList';
-import FoundItemsStats from './page/admin/FoundItemsStats';
-import ReportsSummary from './page/admin/ReportsSummary';
-import ReportsExport from './page/admin/ReportsExport';
 import SettingsSchool from './page/admin/SettingsSchool';
 import SettingsCategories from './page/admin/SettingsCategories';
 import SettingsLocations from './page/admin/SettingsLocations';
@@ -46,13 +40,8 @@ function App() {
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/admin/lost-items" element={<LostItemsList />} />
             <Route path="/admin/lost-items/add" element={<LostItemCreate />} />
-            <Route path="/admin/lost-items/search" element={<LostItemSearch />} />
             <Route path="/admin/found-items" element={<FoundItemsList />} />
-            <Route path="/admin/found-items/stats" element={<FoundItemsStats />} />
             <Route path="/admin/posts/:id" element={<BaidangDetail />} />
-            <Route path="/admin/reports" element={<Report />} />
-            <Route path="/admin/reports/summary" element={<ReportsSummary />} />
-            <Route path="/admin/reports/export" element={<ReportsExport />} />
             <Route path="/admin/roles" element={<Roles />} />
             <Route path="/admin/settings/school" element={<SettingsSchool />} />
             <Route path="/admin/settings/categories" element={<SettingsCategories />} />
@@ -68,14 +57,10 @@ function App() {
           {/* Trang chủ */}
           <Route path="/" element={<Content />} />
 
-          {/* Chi tiết đồ thất lạc cũ (giữ lại nếu cần) */}
-          <Route path="/detail/:id" element={<LostItemDetail />} />
-
-          {/* ===== TRANG BÀI ĐĂNG MỚI – ĐÃ THÊM ===== */}
+          {/* Trang bài đăng */}
           <Route path="/baidang/create" element={<BaidangCreate />} />
           <Route path="/baidang/:id" element={<BaidangDetail />} />
           <Route path="/baidang/mine" element={<MyPosts />} />
-          {/* ======================================== */}
 
           {/* Trang hồ sơ cá nhân */}
           <Route path="/profile" element={<Profile />} />

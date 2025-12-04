@@ -83,7 +83,8 @@ const findPosts = async ({
     location,
     search,
     status,
-    userId
+    userId,
+    returnStatus
 }) => {
     try {
         const pageNum = Math.max(1, parseInt(page));
@@ -97,6 +98,7 @@ const findPosts = async ({
         if (location) filter.location = { $regex: location, $options: 'i' };
         if (status) filter.status = status;
         if (userId) filter.userId = userId;
+        if (returnStatus) filter.returnStatus = returnStatus;
         if (search) {
             filter.$or = [
                 { title: { $regex: search, $options: 'i' } },
@@ -278,7 +280,8 @@ const getTopPosters = async ({ limit = 10 }) => {
                         fullname: '$user.fullname',
                         email: '$user.email',
                         phone: '$user.phone',
-                        roles: '$user.roles'
+                        roles: '$user.roles',
+                        avatar: '$user.avatar'
                     }
                 }
             }

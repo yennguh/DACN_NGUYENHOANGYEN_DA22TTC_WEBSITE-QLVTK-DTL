@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
+import { Bell, CheckCircle, XCircle, AlertCircle, Info, MessageCircle, Heart, Mail } from 'lucide-react';
 import { fetchNotifications, markAsRead, markAllAsRead } from '../../api/notifications.api';
 import { AuthContext } from '../../core/AuthContext';
+import { NotificationListSkeleton } from '../../core/LoadingSpinner';
 
 const Notifications = () => {
     const navigate = useNavigate();
@@ -75,6 +76,14 @@ const Notifications = () => {
                 return <XCircle className="w-5 h-5 text-red-500" />;
             case 'item_found':
                 return <AlertCircle className="w-5 h-5 text-blue-500" />;
+            case 'item_not_found':
+                return <AlertCircle className="w-5 h-5 text-orange-500" />;
+            case 'message_received':
+                return <Mail className="w-5 h-5 text-purple-500" />;
+            case 'comment':
+                return <MessageCircle className="w-5 h-5 text-blue-500" />;
+            case 'like':
+                return <Heart className="w-5 h-5 text-pink-500" />;
             default:
                 return <Info className="w-5 h-5 text-gray-500" />;
         }
@@ -86,7 +95,9 @@ const Notifications = () => {
         }
         
         const type = notification?.type || '';
-        if (notification?.relatedId && type.includes('post')) {
+        if (type === 'message_received') {
+            navigate('/contact');
+        } else if (notification?.relatedId && (type.includes('post') || type === 'comment' || type === 'like' || type === 'item_found' || type === 'item_not_found')) {
             navigate(`/baidang/${notification.relatedId}`);
         }
     };
@@ -156,9 +167,7 @@ const Notifications = () => {
 
                 {/* Notifications List */}
                 {loading ? (
-                    <div className="text-center py-8">
-                        <div className="text-gray-500">Đang tải...</div>
-                    </div>
+                    <NotificationListSkeleton count={5} />
                 ) : notifications.length === 0 ? (
                     <div className="bg-white rounded-lg shadow-sm p-8 text-center">
                         <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />

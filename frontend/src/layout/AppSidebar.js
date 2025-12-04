@@ -2,10 +2,7 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from 'rea
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logoHeader from "../public/assets/logo.jpg";
 import { AuthContext } from '../core/AuthContext';
-import { ChevronDown, CircleUser, FileSearch, LayoutDashboard, Settings, MessageSquare } from 'lucide-react';
-import { CircleQuestionMark } from 'lucide-react';
-import { FolderInput } from 'lucide-react';
-import { Users } from 'lucide-react';
+import { ChevronDown, CircleUser, FileSearch, LayoutDashboard, Settings, MessageSquare, CircleHelp, Users } from 'lucide-react';
 
 const makeIcon = (label) => (
     <span aria-hidden className="inline-block w-6 text-center">{label}</span>
@@ -18,30 +15,17 @@ const navItems = [
         path: '/admin'
     },
     {
-        icon: <CircleQuestionMark />,
+        icon: <CircleHelp />,
         name: 'Đồ thất lạc',
         subItems: [
             { name: 'Danh sách đồ thất lạc', icon: makeIcon('•'), path: '/admin/lost-items' },
-            { name: 'Thêm đồ thất lạc', icon: makeIcon('•'), path: '/admin/lost-items/add' },
-            { name: 'Tìm kiếm nâng cao', icon: makeIcon('•'), path: '/admin/lost-items/search' }
+            { name: 'Thêm đồ thất lạc', icon: makeIcon('•'), path: '/admin/lost-items/add' }
         ]
     },
     {
         icon: <FileSearch />,
         name: 'Đã tìm thấy',
-        subItems: [
-            { name: 'Danh sách đã trả', icon: makeIcon('•'), path: '/admin/found-items' },
-            { name: 'Thống kê', icon: makeIcon('•'), path: '/admin/found-items/stats' }
-        ]
-    },
-    {
-        icon: <FolderInput></FolderInput>,
-        name: 'Báo cáo',
-        subItems: [
-            { name: 'Báo cáo tháng', icon: makeIcon('•'), path: '/admin/reports' },
-            { name: 'Thống kê tổng hợp', icon: makeIcon('•'), path: '/admin/reports/summary' },
-            { name: 'Xuất báo cáo', icon: makeIcon('•'), path: '/admin/reports/export' }
-        ]
+        path: '/admin/found-items'
     },
     {
         icon: <MessageSquare />,

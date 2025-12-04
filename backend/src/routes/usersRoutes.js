@@ -23,6 +23,7 @@ const handleUploadError = (err, req, res, next) => {
 
 Router.post('/login', userController.Login)
 Router.post('/register', userController.CreatedUser)
+Router.post('/google-login', userController.GoogleLogin)
 Router.get('/inforUser', isAuth, userController.InfoUser)
 Router.post('/refresh-token', userController.refreshToken)
 Router.get('/list', isAuth, userController.ListUsers)

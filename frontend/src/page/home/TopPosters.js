@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Star, TrendingUp } from 'lucide-react';
 import { fetchTopPosters } from '../../api/posts.api';
+import { TopPostersGridSkeleton } from '../../core/LoadingSpinner';
 
 const TopPosters = () => {
     const [topPosters, setTopPosters] = useState([]);
@@ -71,23 +72,36 @@ const TopPosters = () => {
     if (loading) {
         return (
             <div className="w-full py-8 px-4 bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-                <div className="max-w-6xl mx-auto text-center">
-                    <div className="text-gray-500">Đang tải bảng khen thưởng...</div>
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-8">
+                        <div className="flex items-center justify-center gap-3 mb-4">
+                            <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full shadow-lg">
+                                <Trophy className="w-8 h-8 text-white" />
+                            </div>
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                Bảng Khen Thưởng
+                            </h2>
+                            <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full shadow-lg">
+                                <TrendingUp className="w-8 h-8 text-white" />
+                            </div>
+                        </div>
+                        <p className="text-gray-600 text-lg">Những thành viên tích cực đóng góp cho cộng đồng</p>
+                    </div>
+                    <TopPostersGridSkeleton count={5} />
                 </div>
             </div>
         );
     }
 
-    // Hiển thị message nếu có lỗi
+    // Hiển thị message nếu có lỗi - vẫn hiển thị giao diện
     if (error) {
         return (
             <div className="w-full py-8 px-4 bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center">
-                        <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
                         <h2 className="text-2xl font-bold text-gray-600 mb-2">Bảng Khen Thưởng</h2>
-                        <p className="text-red-500 mb-2">Lỗi: {error}</p>
-                        <p className="text-gray-500 text-sm">Vui lòng thử lại sau hoặc đăng nhập để xem thống kê.</p>
+                        <p className="text-gray-500">Chưa có dữ liệu thống kê</p>
                     </div>
                 </div>
             </div>
