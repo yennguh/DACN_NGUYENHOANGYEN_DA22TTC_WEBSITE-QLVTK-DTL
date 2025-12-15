@@ -268,6 +268,16 @@ const LoginPage = () => {
                             Chưa có tài khoản?{' '}
                             <Link to="/register" className="text-blue-600 hover:text-blue-700 font-semibold">Đăng ký ngay</Link>
                         </p>
+
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <Link 
+                                to="/admin/login" 
+                                className="flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
+                            >
+                                <span>🛡️</span>
+                                <span>Đăng nhập với tư cách Admin</span>
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Mobile Quick Links */}

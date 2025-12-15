@@ -4,7 +4,7 @@ import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../core/AuthContext";
 import { fetchNotifications } from "../api/notifications.api";
 import { getImageUrl } from "../utils/constant";
-import { User, Bell, LogIn, UserPlus, ChevronDown, Menu, X } from "lucide-react";
+import { User, Bell, Shield, LogIn, UserPlus, ChevronDown, Menu, X } from "lucide-react";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -103,6 +103,14 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
+          {/* Admin Button */}
+          <Link to="/admin/login" className="hidden lg:block">
+            <button className="flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-slate-800 hover:to-black transition-all shadow-lg hover:shadow-xl">
+              <Shield className="w-4 h-4" />
+              <span>Admin</span>
+            </button>
+          </Link>
+
           {user ? (
             <>
               {/* Notifications Bell */}
@@ -218,6 +226,9 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
+            <Link to="/admin/login" onClick={() => setShowMobileMenu(false)} className="px-4 py-3 rounded-xl text-sm font-semibold bg-slate-800 text-white mt-2">
+              🛡️ Admin Panel
+            </Link>
           </nav>
         </div>
       )}
