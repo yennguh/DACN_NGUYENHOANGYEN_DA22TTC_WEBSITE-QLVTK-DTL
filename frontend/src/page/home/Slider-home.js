@@ -20,6 +20,7 @@ export default function ImageSlider({ images = [], autoPlayInterval = 5000, clas
     useEffect(() => {
         startAutoplay();
         return stopAutoplay;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [index, autoPlayInterval, length]);
 
     function startAutoplay() {
@@ -57,6 +58,7 @@ export default function ImageSlider({ images = [], autoPlayInterval = 5000, clas
         }
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [index, length]);
 
     return (

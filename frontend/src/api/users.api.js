@@ -98,3 +98,13 @@ export const changePassword = async (payload) => {
       throw error;
    }
 };
+
+export const getUserById = async (userId) => {
+   try {
+      const response = await api.get(`/v1/user/${userId}`);
+      return response.data;
+   } catch (error) {
+      console.error("Lỗi lấy thông tin người dùng:", error.response?.data || error.message);
+      return null;
+   }
+};

@@ -135,14 +135,14 @@ const UpdateUser = async (req, res, next) => {
         // If files are uploaded, add paths
         if (req.files) {
             if (req.files.avatar && req.files.avatar[0]) {
-                updatePayload.avatar = `/uploads/avatars/${req.files.avatar[0].filename}`;
+                updatePayload.avatar = `/uploads/images/${req.files.avatar[0].filename}`;
             }
             if (req.files.coverPhoto && req.files.coverPhoto[0]) {
-                updatePayload.coverPhoto = `/uploads/covers/${req.files.coverPhoto[0].filename}`;
+                updatePayload.coverPhoto = `/uploads/images/${req.files.coverPhoto[0].filename}`;
             }
         } else if (req.file) {
             // Fallback for single file upload
-            updatePayload.avatar = `/uploads/avatars/${req.file.filename}`;
+            updatePayload.avatar = `/uploads/images/${req.file.filename}`;
         }
 
         // Check if there's anything to update
@@ -300,6 +300,34 @@ const GoogleLogin = async (req, res, next) => {
     }
 }
 
+const GetUserById = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        
+        if (!id) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Yêu cầu ID người dùng' });
+        }
+
+        const user = await userServices.GetUserInfor(id);
+        
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Không tìm thấy người dùng' });
+        }
+
+        // Trả về thông tin công khai của user (không bao gồm password, email nhạy cảm)
+        return res.status(StatusCodes.OK).json({
+            _id: user._id,
+            fullname: user.fullname,
+            avatar: user.avatar || null,
+            coverPhoto: user.coverPhoto || null,
+            createdAt: user.createdAt || null,
+        });
+    } catch (error) {
+        console.error('Get user by id error:', error);
+        next(error);
+    }
+}
+
 const ChangePassword = async (req, res, next) => {
     try {
         const decoded = req.jwtDecoded;
@@ -371,5 +399,6 @@ export const userController = {
     UpdateUser,
     DeleteUser,
     GoogleLogin,
-    ChangePassword
+    ChangePassword,
+    GetUserById
 }

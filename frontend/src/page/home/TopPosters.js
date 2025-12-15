@@ -37,7 +37,7 @@ const TopPosters = ({ compact = false }) => {
 
     const handleViewUserPosts = (userId) => {
         if (userId) {
-            navigate(`/do-that-lac?userId=${userId}`);
+            navigate(`/profile/${userId}`);
         }
     };
 

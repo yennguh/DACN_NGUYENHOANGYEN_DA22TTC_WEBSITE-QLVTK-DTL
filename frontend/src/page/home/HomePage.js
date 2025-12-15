@@ -10,17 +10,24 @@ const HomePage = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [error, setError] = useState(null);
+
     useEffect(() => {
         const loadPosts = async () => {
             try {
+                setError(null);
+                // Lấy bài đăng mới nhất đã được duyệt
                 const result = await fetchPosts({ page: 1, limit: 6, status: 'approved' });
                 if (result && result.data) {
                     setPosts(result.data);
                 } else if (result && Array.isArray(result)) {
                     setPosts(result);
+                } else {
+                    setPosts([]);
                 }
             } catch (error) {
                 console.error("Error fetching posts:", error);
+                setError('Không thể tải bài đăng. Vui lòng thử lại sau.');
             } finally {
                 setLoading(false);
             }
@@ -68,7 +75,19 @@ const HomePage = () => {
 
                     {loading && <PostListSkeleton count={3} />}
 
-                    {!loading && posts.length === 0 && (
+                    {!loading && error && (
+                        <div className="text-center py-12 bg-red-50 rounded-xl">
+                            <p className="text-red-500 mb-4">{error}</p>
+                            <button 
+                                onClick={() => window.location.reload()} 
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                            >
+                                Thử lại
+                            </button>
+                        </div>
+                    )}
+
+                    {!loading && !error && posts.length === 0 && (
                         <div className="text-center py-12">
                             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                             <p className="text-gray-500">Chưa có bài đăng nào</p>

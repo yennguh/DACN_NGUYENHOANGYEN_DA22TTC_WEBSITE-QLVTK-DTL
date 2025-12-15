@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSection from './components/AdminSection';
 import { fetchPosts, deletePost, updateReturnStatus, approvePost, rejectPost } from '../../api/posts.api';
-import { Search, Trash2, Send, RotateCcw, Package, MapPin, Calendar, Eye, CircleAlert, HandHelping, Check, X } from 'lucide-react';
+import { Search, Trash2, Send, RotateCcw, Eye, CircleAlert, HandHelping, Check, X } from 'lucide-react';
 import { getImageUrl } from '../../utils/constant';
 
 export default function FoundItemsList() {
@@ -17,6 +17,7 @@ export default function FoundItemsList() {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
     const fetchData = async () => {

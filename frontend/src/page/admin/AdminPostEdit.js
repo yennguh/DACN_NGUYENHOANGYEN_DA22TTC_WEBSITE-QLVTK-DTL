@@ -9,7 +9,7 @@ import AdminSection from './components/AdminSection';
 export default function AdminPostEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { token } = useContext(AuthContext);
+    useContext(AuthContext);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [post, setPost] = useState(null);
@@ -64,6 +64,7 @@ export default function AdminPostEdit() {
         (formData.itemType && !itemTypes.includes(formData.itemType) && formData.itemType !== '');
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         const loadPost = async () => {
             try {
                 const data = await fetchPostById(id);
@@ -109,6 +110,7 @@ export default function AdminPostEdit() {
         };
 
         loadPost();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, navigate]);
 
     const handleChange = (e) => {

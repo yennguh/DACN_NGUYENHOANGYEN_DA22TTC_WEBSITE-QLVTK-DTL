@@ -13,7 +13,6 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import Roles from './page/admin/Roles';
 import LostItemsList from './page/admin/LostItemsList';
 import LostItemCreate from './page/admin/LostItemCreate';
-import FoundItemsList from './page/admin/FoundItemsList';
 import SettingsSchool from './page/admin/SettingsSchool';
 import SettingsCategories from './page/admin/SettingsCategories';
 import SettingsLocations from './page/admin/SettingsLocations';
@@ -78,6 +77,7 @@ function App() {
 
           {/* Trang hồ sơ cá nhân */}
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<Profile />} />
 
           {/* Trang liên hệ */}
           <Route path="/lien-he" element={<Contact />} />

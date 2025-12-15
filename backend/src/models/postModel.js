@@ -26,6 +26,20 @@ const POST_COLLECTION_SCHEMA = Joi.object({
     sharedFrom: Joi.string().optional(), // ID bài đăng gốc (nếu là bài chia sẻ)
     sharedFromUser: Joi.string().optional(), // ID người đăng bài gốc
     isShared: Joi.boolean().default(false), // Đánh dấu bài đăng được chia sẻ
+    shareComment: Joi.string().optional().allow(''), // Lời bình của người chia sẻ
+    originalPost: Joi.object({
+        _id: Joi.any(),
+        title: Joi.string(),
+        description: Joi.string(),
+        category: Joi.string(),
+        itemType: Joi.string(),
+        location: Joi.string(),
+        images: Joi.array().items(Joi.string()),
+        authorFullname: Joi.string().allow(''),
+        authorAvatar: Joi.string().allow('', null),
+        userId: Joi.string(),
+        createdAt: Joi.any()
+    }).optional(), // Thông tin bài đăng gốc (không thể chỉnh sửa)
     isAdminPost: Joi.boolean().default(false), // Đánh dấu bài đăng của admin
     createdAt: Joi.date().timestamp('javascript').default(Date.now),
     updatedAt: Joi.date().timestamp('javascript').default(null)

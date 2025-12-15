@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Package, X, SlidersHorizontal, Plus, User } from "lucide-react";
+import { Search, Package, X, SlidersHorizontal, Plus } from "lucide-react";
 import { fetchPosts } from "../../api/posts.api";
 import { AuthContext } from "../../core/AuthContext";
 import { jwtDecode } from "jwt-decode";
@@ -61,6 +61,7 @@ const LostItemsPage = () => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categoryFilter, itemTypeFilter, locationFilter, searchTerm, showMyPosts, userIdFromUrl]);
 
     // Lấy tên user khi xem bài đăng của người khác

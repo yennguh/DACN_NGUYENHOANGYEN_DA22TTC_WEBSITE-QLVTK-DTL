@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Clock, MapPin, Package, Phone, Mail, ArrowLeft, Edit, Trash2, MessageCircle, Send, Heart, Reply, Image, X, Ban, Share2 } from 'lucide-react';
-import { fetchPostById, deletePost, updatePost, createPost } from '../../api/posts.api';
+import { fetchPostById, deletePost, updatePost, sharePost } from '../../api/posts.api';
 import { fetchCommentsByPostId, createComment, updateComment, deleteComment, toggleLikeComment, replyComment } from '../../api/comments.api';
 import { createReport } from '../../api/reports.api';
 import { getImageUrl } from '../../utils/constant';
@@ -266,6 +266,71 @@ const BaidangDetail = () => {
         return <div className={`${sizes[size]} rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold flex-shrink-0`}>{name?.charAt(0).toUpperCase() || 'U'}</div>;
     };
 
+    // Component hiển thị card bài gốc với xử lý lỗi ảnh - ẢNH ĐƯỢC BLUR BẰNG AI
+    const OriginalPostCard = ({ originalPost, onNavigate }) => {
+        const [avatarErr, setAvatarErr] = useState(false);
+        
+        // Lấy postOwnerId của bài gốc để xác định ai được xem ảnh rõ
+        const originalPostOwnerId = originalPost.userId || originalPost.user?._id;
+        
+        return (
+            <div 
+                onClick={onNavigate}
+                className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all"
+            >
+                <div className="p-4">
+                    {/* Header bài gốc */}
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {originalPost.authorAvatar && !avatarErr ? (
+                                <img src={getImageUrl(originalPost.authorAvatar)} alt="" className="w-full h-full object-cover" onError={() => setAvatarErr(true)} />
+                            ) : (
+                                <span className="text-white text-sm font-bold">{originalPost.authorFullname?.charAt(0)?.toUpperCase() || 'U'}</span>
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-semibold text-gray-900">{originalPost.authorFullname || 'Người dùng'}</p>
+                            <p className="text-xs text-gray-500">{new Date(originalPost.createdAt).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${originalPost.category === 'lost' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                            {originalPost.category === 'lost' ? '🔍 Thất lạc' : '✨ Nhặt được'}
+                        </span>
+                    </div>
+                    
+                    {/* Nội dung bài gốc */}
+                    <h4 className="font-bold text-blue-600 mb-2">{originalPost.title}</h4>
+                    <p className="text-gray-600 text-sm line-clamp-3 mb-3">{originalPost.description}</p>
+                    
+                    {/* Ảnh bài gốc - SỬ DỤNG PrivacyImage ĐỂ BLUR */}
+                    {originalPost.images?.[0] && (
+                        <div className="rounded-lg overflow-hidden mb-3 bg-gray-100">
+                            <PrivacyImage 
+                                src={originalPost.images[0]} 
+                                alt="" 
+                                className="w-full h-48 object-cover" 
+                                blur={true}
+                                postOwnerId={originalPostOwnerId}
+                            />
+                        </div>
+                    )}
+                    
+                    {/* Tags */}
+                    <div className="flex gap-2">
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded flex items-center gap-1">
+                            <Package className="w-3 h-3" /> {originalPost.itemType}
+                        </span>
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {originalPost.location}
+                        </span>
+                    </div>
+                </div>
+                <div className="px-4 py-2 bg-gray-100 text-center text-sm text-blue-600 font-medium">
+                    Nhấn để xem bài đăng gốc →
+                </div>
+            </div>
+        );
+    };
+
     if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-xl">Đang tải...</div></div>;
     if (!post) return <div className="min-h-screen flex items-center justify-center"><div className="text-center"><h2 className="text-2xl font-bold mb-4">Không tìm thấy bài đăng</h2><Link to="/" className="text-blue-600 hover:underline">Quay về trang chủ</Link></div></div>;
 
@@ -279,101 +344,133 @@ const BaidangDetail = () => {
 
                 {(isOwner || isAdmin) && (
                     <div className="flex gap-2 mb-4">
-                        {isOwner && !editingPost && <button onClick={() => setEditingPost(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Edit className="w-4 h-4" /> Chỉnh sửa</button>}
+                        {/* Không cho chỉnh sửa bài chia sẻ */}
+                        {isOwner && !editingPost && !post?.isShared && <button onClick={() => setEditingPost(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Edit className="w-4 h-4" /> Chỉnh sửa</button>}
                         {isOwner && editingPost && (
                             <>
                                 <button onClick={handleSavePost} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Lưu</button>
                                 <button onClick={handleCancelEditPost} className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">Hủy</button>
                             </>
                         )}
-                        {isAdmin && !isOwner && <Link to={`/admin/posts/${id}/edit`} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"><Edit className="w-4 h-4" /> Chỉnh sửa (Admin)</Link>}
+                        {isAdmin && !isOwner && !post?.isShared && <Link to={`/admin/posts/${id}/edit`} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"><Edit className="w-4 h-4" /> Chỉnh sửa (Admin)</Link>}
                         <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"><Trash2 className="w-4 h-4" /> Xóa</button>
                     </div>
                 )}
 
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+                    {/* Header - Người chia sẻ hoặc người đăng */}
                     <div className="flex items-center justify-between p-5 border-b border-gray-100">
                         <div className="flex items-center gap-3">
                             <Avatar src={user?.avatar} name={user?.fullname} size="lg" />
                             <div>
-                                <p className="font-semibold text-gray-900">{user?.fullname || 'Người dùng'}</p>
+                                <p className="font-semibold text-gray-900">
+                                    {user?.fullname || 'Người dùng'}
+                                    {post.isShared && <span className="text-gray-500 font-normal text-sm ml-2">đã chia sẻ bài viết</span>}
+                                </p>
                                 <p className="text-sm text-gray-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{new Date(post.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className={`px-4 py-2 rounded-full text-sm font-semibold ${post.category === 'lost' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>{post.category === 'lost' ? '🔍 Thất lạc' : '✨ Nhặt được'}</div>
-                            
-                            {/* Badge trạng thái đã tìm được/đã trả */}
-                            {/* Chủ bài/Admin: hiện checkbox + badge */}
-                            {(isOwner || isAdmin) && (
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={returnStatus} 
-                                        onChange={handleToggleReturnStatus}
-                                        className="w-5 h-5 rounded border-gray-300 text-green-500 focus:ring-green-500"
-                                    />
-                                    <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                                        returnStatus 
-                                            ? 'bg-green-500 text-white' 
-                                            : 'bg-gray-200 text-gray-500'
-                                    }`}>
+                        {/* Chỉ hiện badge category và return status nếu KHÔNG phải bài chia sẻ */}
+                        {!post.isShared && (
+                            <div className="flex items-center gap-2">
+                                <div className={`px-4 py-2 rounded-full text-sm font-semibold ${post.category === 'lost' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>{post.category === 'lost' ? '🔍 Thất lạc' : '✨ Nhặt được'}</div>
+                                
+                                {/* Badge trạng thái đã tìm được/đã trả */}
+                                {/* Chủ bài/Admin: hiện checkbox + badge */}
+                                {(isOwner || isAdmin) && (
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={returnStatus} 
+                                            onChange={handleToggleReturnStatus}
+                                            className="w-5 h-5 rounded border-gray-300 text-green-500 focus:ring-green-500"
+                                        />
+                                        <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                                            returnStatus 
+                                                ? 'bg-green-500 text-white' 
+                                                : 'bg-gray-200 text-gray-500'
+                                        }`}>
+                                            {post.category === 'lost' ? 'Đã tìm được' : 'Đã trả lại'}
+                                        </span>
+                                    </label>
+                                )}
+                                {/* Người khác: chỉ thấy badge khi đã tick */}
+                                {!isOwner && !isAdmin && returnStatus && (
+                                    <div className="px-4 py-2 rounded-full text-sm font-semibold bg-green-500 text-white flex items-center gap-2">
+                                        <span className="text-white">✓</span>
                                         {post.category === 'lost' ? 'Đã tìm được' : 'Đã trả lại'}
-                                    </span>
-                                </label>
-                            )}
-                            {/* Người khác: chỉ thấy badge khi đã tick */}
-                            {!isOwner && !isAdmin && returnStatus && (
-                                <div className="px-4 py-2 rounded-full text-sm font-semibold bg-green-500 text-white flex items-center gap-2">
-                                    <span className="text-white">✓</span>
-                                    {post.category === 'lost' ? 'Đã tìm được' : 'Đã trả lại'}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="p-5">
-                        <h1 className="text-2xl font-bold text-blue-600 mb-3">{post.title}</h1>
-                        {editingPost ? (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Mô tả</label>
-                                    <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full p-3 border rounded-lg" rows="4" />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Loại đồ vật</label>
-                                        <input type="text" value={editItemType} onChange={(e) => setEditItemType(e.target.value)} className="w-full p-2 border rounded" />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Vị trí</label>
-                                        <input type="text" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="w-full p-2 border rounded" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Loại bài đăng</label>
-                                    <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="w-full p-2 border rounded">
-                                        <option value="lost">Thất lạc</option>
-                                        <option value="found">Nhặt được</option>
-                                    </select>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Số điện thoại</label>
-                                        <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full p-2 border rounded" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Email</label>
-                                        <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full p-2 border rounded" />
-                                    </div>
-                                </div>
+                                )}
                             </div>
-                        ) : (
-                            post.description && <p className="text-gray-700 whitespace-pre-wrap">{post.description}</p>
                         )}
                     </div>
 
-                    {!editingPost && (
+                    {/* Nội dung bài đăng */}
+                    <div className="p-5">
+                        {/* Nếu là bài chia sẻ: chỉ hiện shareComment (không hiện title) */}
+                        {post.isShared ? (
+                            <>
+                                {/* Lời bình của người chia sẻ */}
+                                {post.shareComment && (
+                                    <p className="text-gray-700 whitespace-pre-wrap mb-4">{post.shareComment}</p>
+                                )}
+                                
+                                {/* Card bài đăng gốc - click để chuyển đến bài gốc */}
+                                {post.originalPost && (
+                                    <OriginalPostCard 
+                                        originalPost={post.originalPost} 
+                                        sharedFrom={post.sharedFrom}
+                                        onNavigate={() => navigate(`/baidang/${post.originalPost._id || post.sharedFrom}`)}
+                                    />
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {/* Bài đăng thường */}
+                                <h1 className="text-2xl font-bold text-blue-600 mb-3">{post.title}</h1>
+                                {editingPost ? (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Mô tả</label>
+                                            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full p-3 border rounded-lg" rows="4" />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">Loại đồ vật</label>
+                                                <input type="text" value={editItemType} onChange={(e) => setEditItemType(e.target.value)} className="w-full p-2 border rounded" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">Vị trí</label>
+                                                <input type="text" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="w-full p-2 border rounded" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Loại bài đăng</label>
+                                            <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="w-full p-2 border rounded">
+                                                <option value="lost">Thất lạc</option>
+                                                <option value="found">Nhặt được</option>
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">Số điện thoại</label>
+                                                <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full p-2 border rounded" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">Email</label>
+                                                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full p-2 border rounded" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    post.description && <p className="text-gray-700 whitespace-pre-wrap">{post.description}</p>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Chỉ hiện phần thông tin chi tiết và liên hệ nếu KHÔNG phải bài chia sẻ */}
+                    {!editingPost && !post.isShared && (
                     <div className="p-5 border-t border-gray-100">
                         <div className="flex flex-wrap gap-3 mb-4">
                             <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full"><Package className="w-4 h-4" /> {post.itemType}</span>
@@ -427,7 +524,8 @@ const BaidangDetail = () => {
                     </div>
                     )}
 
-                    {post.images?.length > 0 && (
+                    {/* Chỉ hiện ảnh nếu KHÔNG phải bài chia sẻ */}
+                    {!post.isShared && post.images?.length > 0 && (
                         <div className="relative">
                             {token && !isOwner && !post.user?.roles?.includes('admin') && (
                                 <button onClick={() => setShowReportModal(true)} className="absolute top-3 right-3 z-10 p-2 bg-white/90 hover:bg-red-50 rounded-full shadow-md transition-all" title="Tố cáo bài đăng">
@@ -453,8 +551,8 @@ const BaidangDetail = () => {
                                 <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500' : ''}`} /> {isFavorite ? 'Đã yêu thích' : 'Yêu thích'}
                             </button>
                             
-                            {/* Nút chia sẻ */}
-                            {token && !isOwner && (
+                            {/* Nút chia sẻ - không cho chia sẻ bài chia sẻ */}
+                            {token && !isOwner && !post.isShared && (
                                 <button onClick={() => setShowShareModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200">
                                     <Share2 className="w-5 h-5" /> Chia sẻ
                                 </button>
@@ -658,18 +756,9 @@ const BaidangDetail = () => {
                                 onClick={async () => {
                                     setSubmittingShare(true);
                                     try {
-                                        // Tạo bài đăng mới với thông tin chia sẻ
-                                        await createPost({
-                                            title: shareCaption.trim() || `Chia sẻ: ${post.title}`,
-                                            description: `${shareCaption ? shareCaption + '\n\n---\n\n' : ''}📢 Chia sẻ từ bài đăng của ${user?.fullname || 'người dùng'}:\n\n${post.description}`,
-                                            category: post.category,
-                                            itemType: post.itemType,
-                                            location: post.location,
-                                            images: post.images || [],
-                                            sharedFrom: post._id, // ID bài gốc
-                                            sharedFromUser: post.userId // ID người đăng gốc
-                                        });
-                                        alert('Đã chia sẻ bài đăng thành công! Bài đăng đang chờ duyệt.');
+                                        // Gọi API chia sẻ bài đăng
+                                        await sharePost(post._id, shareCaption.trim());
+                                        alert('Đã chia sẻ bài đăng thành công!');
                                         setShowShareModal(false);
                                         setShareCaption('');
                                     } catch (err) {

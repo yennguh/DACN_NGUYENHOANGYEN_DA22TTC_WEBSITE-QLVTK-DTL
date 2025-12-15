@@ -10,14 +10,15 @@ import { getImageUrl } from '../utils/constant';
  * PrivacyImage - Dùng AI để làm mờ chỉ đồ vật, giữ nền rõ
  * @param {string} postOwnerId - ID của chủ bài đăng (nếu có)
  * @param {boolean} blur - Có blur hay không (mặc định true)
+ * @param {boolean} forceBlurAll - Nếu true, blur tất cả trừ Admin (dùng cho trang danh sách)
  */
-const PrivacyImage = ({ src: rawSrc, alt, className = '', blur = true, onClick, postOwnerId, ...props }) => {
+const PrivacyImage = ({ src: rawSrc, alt, className = '', blur = true, onClick, postOwnerId, forceBlurAll = false, ...props }) => {
     const { token } = useContext(AuthContext);
     
     // Xử lý URL ảnh
     const src = useMemo(() => getImageUrl(rawSrc), [rawSrc]);
     
-    // Kiểm tra xem user hiện tại có phải admin không - chỉ admin mới không bị blur
+    // Kiểm tra xem user hiện tại có cần blur không
     const needBlur = useMemo(() => {
         if (!blur) return false;
         if (!token) return true; // Chưa đăng nhập -> blur
@@ -25,15 +26,26 @@ const PrivacyImage = ({ src: rawSrc, alt, className = '', blur = true, onClick, 
         try {
             const decoded = jwtDecode(token);
             const roles = decoded.roles || [];
+            const currentUserId = decoded._id || decoded.id;
             
-            // Chỉ Admin không bị blur
+            // Admin không bị blur
             if (roles.includes('admin')) return false;
             
-            return true; // Tất cả người khác -> blur
+            // Nếu forceBlurAll = true (trang danh sách), blur tất cả trừ Admin
+            if (forceBlurAll) return true;
+            
+            // Chủ bài đăng không bị blur (chỉ khi không forceBlurAll)
+            if (postOwnerId && currentUserId) {
+                const ownerId = String(postOwnerId);
+                const userId = String(currentUserId);
+                if (ownerId === userId) return false;
+            }
+            
+            return true; // Người khác -> blur
         } catch (err) {
             return true;
         }
-    }, [blur, token]);
+    }, [blur, token, postOwnerId, forceBlurAll]);
     
     const canvasRef = useRef(null);
     const [loading, setLoading] = useState(true);

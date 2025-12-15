@@ -1,6 +1,7 @@
 import express from 'express';
 import { postController } from '../controllers/postController.js';
 import { isAuth } from '../middlewares/authMiddleware.js';
+import { uploadPostImages } from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -12,8 +13,9 @@ router.get('/:id', postController.getPostById);
 router.post('/:id/like', isAuth, postController.toggleLike);
 
 // Protected routes (require authentication)
-router.post('/', isAuth, postController.createPost);
-router.put('/:id', isAuth, postController.updatePost);
+router.post('/', isAuth, uploadPostImages, postController.createPost);
+router.post('/share', isAuth, postController.sharePost); // Chia sẻ bài đăng
+router.put('/:id', isAuth, uploadPostImages, postController.updatePost);
 router.delete('/:id', isAuth, postController.deletePost);
 
 // Admin routes

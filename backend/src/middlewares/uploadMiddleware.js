@@ -6,54 +6,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure upload directories exist
-const avatarDir = path.join(__dirname, '../../public/uploads/avatars/');
-const commentDir = path.join(__dirname, '../../public/uploads/comments/');
-const coverDir = path.join(__dirname, '../../public/uploads/covers/');
-const contactDir = path.join(__dirname, '../../public/uploads/contacts/');
+// Thư mục chung lưu tất cả ảnh
+const imagesDir = path.join(__dirname, '../../public/uploads/images/');
 
-if (!fs.existsSync(avatarDir)) {
-    fs.mkdirSync(avatarDir, { recursive: true });
+if (!fs.existsSync(imagesDir)) {
+    fs.mkdirSync(imagesDir, { recursive: true });
 }
-if (!fs.existsSync(commentDir)) {
-    fs.mkdirSync(commentDir, { recursive: true });
-}
-if (!fs.existsSync(coverDir)) {
-    fs.mkdirSync(coverDir, { recursive: true });
-}
-if (!fs.existsSync(contactDir)) {
-    fs.mkdirSync(contactDir, { recursive: true });
-}
-
-// Configure storage for avatars
-const avatarStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        if (!fs.existsSync(avatarDir)) {
-            fs.mkdirSync(avatarDir, { recursive: true });
-        }
-        cb(null, avatarDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, 'avatar-' + uniqueSuffix + ext);
-    }
-});
-
-// Configure storage for comment images
-const commentStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        if (!fs.existsSync(commentDir)) {
-            fs.mkdirSync(commentDir, { recursive: true });
-        }
-        cb(null, commentDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, 'comment-' + uniqueSuffix + ext);
-    }
-});
 
 // File filter - only allow images
 const fileFilter = (req, file, cb) => {
@@ -68,49 +26,59 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Configure multer for avatars
-const uploadAvatarMulter = multer({
-    storage: avatarStorage,
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: fileFilter
-});
-
-// Configure multer for comment images
-const uploadCommentMulter = multer({
-    storage: commentStorage,
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: fileFilter
-});
-
-// Configure storage for cover photos
-const coverStorage = multer.diskStorage({
+// Storage chung - tất cả ảnh lưu vào /uploads/images/
+const createStorage = (prefix) => multer.diskStorage({
     destination: function (req, file, cb) {
-        if (!fs.existsSync(coverDir)) {
-            fs.mkdirSync(coverDir, { recursive: true });
+        if (!fs.existsSync(imagesDir)) {
+            fs.mkdirSync(imagesDir, { recursive: true });
         }
-        cb(null, coverDir);
+        cb(null, imagesDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        cb(null, 'cover-' + uniqueSuffix + ext);
+        cb(null, prefix + '-' + uniqueSuffix + ext);
     }
 });
 
-// Configure multer for profile (avatar + cover)
+// Configure multer cho từng loại với prefix khác nhau
+const uploadAvatarMulter = multer({
+    storage: createStorage('avatar'),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter
+});
+
+const uploadCommentMulter = multer({
+    storage: createStorage('comment'),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter
+});
+
+const uploadContactMulter = multer({
+    storage: createStorage('contact'),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter
+});
+
+const uploadPostMulter = multer({
+    storage: createStorage('post'),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: fileFilter
+});
+
+// Storage cho profile (avatar + cover) - cùng thư mục images
 const profileStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        if (file.fieldname === 'avatar') {
-            cb(null, avatarDir);
-        } else if (file.fieldname === 'coverPhoto') {
-            cb(null, coverDir);
+        if (!fs.existsSync(imagesDir)) {
+            fs.mkdirSync(imagesDir, { recursive: true });
         }
+        cb(null, imagesDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        const prefix = file.fieldname === 'avatar' ? 'avatar-' : 'cover-';
-        cb(null, prefix + uniqueSuffix + ext);
+        const prefix = file.fieldname === 'avatar' ? 'avatar' : 'cover';
+        cb(null, prefix + '-' + uniqueSuffix + ext);
     }
 });
 
@@ -120,33 +88,11 @@ const uploadProfileMulter = multer({
     fileFilter: fileFilter
 });
 
-// Configure storage for contact images
-const contactStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        if (!fs.existsSync(contactDir)) {
-            fs.mkdirSync(contactDir, { recursive: true });
-        }
-        cb(null, contactDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, 'contact-' + uniqueSuffix + ext);
-    }
-});
-
-// Configure multer for contact images
-const uploadContactMulter = multer({
-    storage: contactStorage,
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: fileFilter
-});
-
 export const uploadAvatar = uploadAvatarMulter.single('avatar');
 export const uploadCommentImage = uploadCommentMulter.single('image');
 export const uploadContactImage = uploadContactMulter.single('image');
+export const uploadPostImages = uploadPostMulter.array('images', 10);
 export const uploadProfile = uploadProfileMulter.fields([
     { name: 'avatar', maxCount: 1 },
     { name: 'coverPhoto', maxCount: 1 }
 ]);
-

@@ -36,6 +36,7 @@ export default function ReturnedItemsList() {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm]);
 
     const handleDelete = async (postId) => {

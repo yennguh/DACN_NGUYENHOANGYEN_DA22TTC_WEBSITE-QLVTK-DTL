@@ -69,7 +69,7 @@ export default function AppSidebar() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded] = useState(true);
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const [subMenuHeight, setSubMenuHeight] = useState({});
     const subMenuRefs = useRef({});

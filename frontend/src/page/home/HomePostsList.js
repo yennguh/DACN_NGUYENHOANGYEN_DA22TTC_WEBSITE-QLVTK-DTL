@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Search, Clock, Eye, MapPin, LayoutGrid, Package, X, SlidersHorizontal } from "lucide-react";
 import { fetchPosts } from "../../api/posts.api";
 import { AuthContext } from "../../core/AuthContext";
@@ -214,15 +214,17 @@ const HomePostsList = () => {
                             >
                                 {/* User Header */}
                                 <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
+                                    <Link to={`/profile/${item.user?._id || item.userId}`} onClick={(e) => e.stopPropagation()} className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-blue-300 transition-all">
                                         {(item.user?.avatar || item.authorAvatar) ? (
                                             <img src={getImageUrl(item.user?.avatar || item.authorAvatar)} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
                                         ) : (
                                             <span className="text-white text-sm font-bold">{item.user?.fullname?.substring(0, 1).toUpperCase() || 'U'}</span>
                                         )}
-                                    </div>
+                                    </Link>
                                     <div className="flex-1">
-                                        <p className="font-medium text-gray-900">{item.user?.fullname || 'Người dùng'}</p>
+                                        <Link to={`/profile/${item.user?._id || item.userId}`} onClick={(e) => e.stopPropagation()} className="hover:underline">
+                                            <p className="font-medium text-gray-900">{item.user?.fullname || 'Người dùng'}</p>
+                                        </Link>
                                         <p className="text-xs text-gray-500 flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
                                             {new Date(item.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

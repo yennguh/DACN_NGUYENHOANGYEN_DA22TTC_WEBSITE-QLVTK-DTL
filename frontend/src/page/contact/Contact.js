@@ -46,6 +46,7 @@ const Contact = () => {
             fetchUserInfo();
             fetchData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     useEffect(() => {
@@ -298,14 +299,14 @@ const Contact = () => {
                                 <Mail className="w-6 h-6 text-blue-600" />
                                 <div>
                                     <p className="font-medium text-gray-900">Email</p>
-                                    <p className="text-gray-600">support@example.com</p>
+                                    <p className="text-gray-600">hoangyen24042004@gmail.com</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 p-4 bg-purple-50 rounded-xl">
                                 <Phone className="w-6 h-6 text-purple-600" />
                                 <div>
-                                    <p className="font-medium text-gray-900">Điện thoại</p>
-                                    <p className="text-gray-600">0123 456 789</p>
+                                    <p className="font-medium text-gray-900">Hotline</p>
+                                    <p className="text-gray-600">0986 095 484</p>
                                 </div>
                             </div>
                         </div>

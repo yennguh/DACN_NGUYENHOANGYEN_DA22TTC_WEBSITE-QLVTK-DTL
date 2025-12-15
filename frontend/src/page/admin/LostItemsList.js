@@ -63,6 +63,7 @@ export default function LostItemsList() {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [statusFilter, searchTerm]);
 
     const handleApprove = async (postId) => {

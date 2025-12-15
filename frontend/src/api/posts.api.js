@@ -150,3 +150,14 @@ export const unbanPost = async (id) => {
     }
 };
 
+// Chia sẻ bài đăng - tạo bài mới với thông tin bài gốc được nhúng
+export const sharePost = async (originalPostId, shareComment = '') => {
+    try {
+        const response = await api.post('/v1/posts/share', { originalPostId, shareComment });
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi chia sẻ bài đăng:", error.response?.data || error.message);
+        throw error;
+    }
+};
+

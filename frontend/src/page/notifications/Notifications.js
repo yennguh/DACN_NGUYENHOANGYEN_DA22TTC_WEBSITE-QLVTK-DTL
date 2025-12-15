@@ -19,6 +19,7 @@ const Notifications = () => {
             return;
         }
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, navigate, filter]);
 
     const fetchData = async () => {

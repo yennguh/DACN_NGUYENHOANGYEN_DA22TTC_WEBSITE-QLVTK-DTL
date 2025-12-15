@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Upload, X, AlertCircle, MapPin, Phone, Mail, FileText, Tag, Image, ChevronRight, Sparkles, CheckCircle, Shield } from 'lucide-react';

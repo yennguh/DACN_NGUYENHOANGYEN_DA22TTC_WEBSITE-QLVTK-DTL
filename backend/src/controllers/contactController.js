@@ -63,7 +63,7 @@ const addReply = async (req, res, next) => {
         // Lấy URL ảnh nếu có upload
         let imageUrl = null;
         if (req.file) {
-            imageUrl = `/uploads/contacts/${req.file.filename}`;
+            imageUrl = `/uploads/images/${req.file.filename}`;
         }
 
         if (!message && !imageUrl) {

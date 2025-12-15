@@ -29,5 +29,6 @@ Router.post('/refresh-token', userController.refreshToken)
 Router.get('/list', isAuth, userController.ListUsers)
 Router.put('/updateUser', isAuth, uploadProfile, handleUploadError, userController.UpdateUser)
 Router.put('/change-password', isAuth, userController.ChangePassword)
+Router.get('/:id', userController.GetUserById)
 Router.delete('/:id', isAuth, userController.DeleteUser)
 export default Router

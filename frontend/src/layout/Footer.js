@@ -116,13 +116,13 @@ export default function Footer() {
                                 <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <Phone className="w-5 h-5 text-blue-400" />
                                 </div>
-                                <span className="text-gray-400 text-sm">+84 294 3855 246</span>
+                                <span className="text-gray-400 text-sm">0986 095 484</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <Mail className="w-5 h-5 text-blue-400" />
                                 </div>
-                                <span className="text-gray-400 text-sm">tvu@tvu.edu.vn</span>
+                                <span className="text-gray-400 text-sm">hoangyen24042004@gmail.com</span>
                             </li>
                         </ul>
                     </div>

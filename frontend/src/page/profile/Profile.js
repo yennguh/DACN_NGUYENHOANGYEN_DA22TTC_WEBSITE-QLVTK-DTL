@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { User, Mail, Phone, Save, Edit2, Camera, X, MapPin, Clock, Package, FileText, Image, Grid3X3, Trash2 } from 'lucide-react';
-import { inforUser, updateUser } from '../../api/users.api';
+import { inforUser, updateUser, getUserById } from '../../api/users.api';
 import { fetchPosts, deletePost } from '../../api/posts.api';
 import { AuthContext } from '../../core/AuthContext';
 import { getImageUrl } from '../../utils/constant';
@@ -10,7 +10,8 @@ import { ProfileSkeleton } from '../../core/LoadingSpinner';
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { token, setUserInfo, refreshUser } = useContext(AuthContext);
+    const { userId } = useParams(); // Lấy userId từ URL nếu có
+    const { token, setUserInfo, refreshUser, user: currentUser } = useContext(AuthContext);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -25,14 +26,21 @@ const Profile = () => {
     const [activeTab, setActiveTab] = useState('posts');
     const fileInputRef = useRef(null);
     const coverInputRef = useRef(null);
+    
+    // Kiểm tra xem đang xem profile của mình hay của người khác
+    const isOwnProfile = !userId || (currentUser && (userId === currentUser._id || userId === currentUser.id));
 
     const { register, handleSubmit, formState: { errors }, reset } = useForm({ mode: "onTouched" });
 
     useEffect(() => {
         if (!token) { navigate('/login'); return; }
-        fetchUserInfo();
+        if (userId && !isOwnProfile) {
+            fetchOtherUserInfo(userId);
+        } else {
+            fetchUserInfo();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [token, navigate]);
+    }, [token, navigate, userId]);
 
     useEffect(() => {
         if (user?._id) fetchUserPosts();
@@ -60,6 +68,30 @@ const Profile = () => {
             }
         } catch (error) {
             console.error('Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Lấy thông tin profile của user khác
+    const fetchOtherUserInfo = async (id) => {
+        try {
+            const userData = await getUserById(id);
+            if (userData) {
+                setUser(userData);
+                if (userData.avatar && userData.avatar.length > 5 && (userData.avatar.includes('/') || userData.avatar.startsWith('http'))) {
+                    setAvatarPreview(getImageUrl(userData.avatar));
+                } else {
+                    setAvatarPreview(null);
+                }
+                if (userData.coverPhoto && userData.coverPhoto.length > 5) {
+                    setCoverPreview(getImageUrl(userData.coverPhoto));
+                } else {
+                    setCoverPreview(null);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching other user:', error);
         } finally {
             setLoading(false);
         }

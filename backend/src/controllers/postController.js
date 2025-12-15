@@ -13,8 +13,19 @@ const createPost = async (req, res, next) => {
 
         const isAdmin = decoded.roles?.includes('admin') || false;
 
+        // Xử lý ảnh upload
+        let images = [];
+        if (req.files && req.files.length > 0) {
+            // Ảnh được upload qua multer
+            images = req.files.map(file => `/uploads/images/${file.filename}`);
+        } else if (req.body.images) {
+            // Ảnh dạng Base64 hoặc URL (fallback)
+            images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+        }
+
         let payload = {
             ...req.body,
+            images: images,
             userId: decoded._id,
             // Admin đăng bài trực tiếp được duyệt, user thường phải chờ duyệt
             status: isAdmin ? (req.body.status || 'approved') : 'pending',
@@ -97,11 +108,22 @@ const updatePost = async (req, res, next) => {
 
         let updatePayload = { ...req.body };
 
+        // Xử lý ảnh upload khi update
+        if (req.files && req.files.length > 0) {
+            // Ảnh mới được upload
+            const newImages = req.files.map(file => `/uploads/images/${file.filename}`);
+            // Giữ lại ảnh cũ nếu có và thêm ảnh mới
+            const existingImages = req.body.existingImages ? 
+                (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]) : [];
+            updatePayload.images = [...existingImages, ...newImages];
+        }
+
         // QUAN TRỌNG: Admin không được thay đổi thông tin người đăng
         // Xóa các trường không được phép thay đổi
         delete updatePayload.userId;
         delete updatePayload.authorFullname;
         delete updatePayload.authorAvatar;
+        delete updatePayload.existingImages; // Xóa field tạm
 
         // Chỉ cập nhật author info nếu là chủ bài đăng (không phải admin đang sửa bài của người khác)
         if (isOwner) {
@@ -481,6 +503,111 @@ const unbanPost = async (req, res, next) => {
     }
 };
 
+// Chia sẻ bài đăng - tạo bài mới với thông tin bài gốc được nhúng
+const sharePost = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded._id) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Chưa đăng nhập' });
+        }
+
+        const { originalPostId, shareComment } = req.body;
+        
+        if (!originalPostId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Thiếu ID bài đăng gốc' });
+        }
+
+        // Lấy thông tin bài đăng gốc
+        const originalPost = await postServices.getPostById(originalPostId);
+        if (!originalPost) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Không tìm thấy bài đăng gốc' });
+        }
+
+        // Lấy thông tin người chia sẻ
+        let sharerInfo = { fullname: 'Người dùng', avatar: null };
+        try {
+            const user = await userServices.GetUserInfor(decoded._id);
+            if (user) {
+                sharerInfo.fullname = user.fullname || 'Người dùng';
+                sharerInfo.avatar = user.avatar || null;
+            }
+        } catch (error) {
+            console.log('Error fetching sharer info:', error);
+        }
+
+        // QUAN TRỌNG: Lưu thông tin bài gốc TẠI THỜI ĐIỂM CHIA SẺ
+        // Không lấy thông tin user mới nhất - giữ nguyên avatar và tên từ bài gốc
+        const originalAuthorInfo = {
+            fullname: originalPost.authorFullname || originalPost.user?.fullname || 'Ẩn danh',
+            avatar: originalPost.authorAvatar || originalPost.user?.avatar || null
+        };
+
+        // Tạo bài đăng chia sẻ - lưu nguyên thông tin bài gốc (đóng băng tại thời điểm chia sẻ)
+        const sharePayload = {
+            // Thông tin người chia sẻ
+            userId: decoded._id,
+            authorFullname: sharerInfo.fullname,
+            authorAvatar: sharerInfo.avatar,
+            
+            // Đánh dấu là bài chia sẻ
+            isShared: true,
+            shareComment: shareComment || '', // Lời bình của người chia sẻ
+            
+            // Lưu nguyên thông tin bài gốc (không thể chỉnh sửa)
+            originalPost: {
+                _id: originalPost._id,
+                title: originalPost.title,
+                description: originalPost.description,
+                category: originalPost.category,
+                itemType: originalPost.itemType,
+                location: originalPost.location,
+                images: originalPost.images || [],
+                authorFullname: originalAuthorInfo.fullname,
+                authorAvatar: originalAuthorInfo.avatar,
+                userId: originalPost.userId,
+                createdAt: originalPost.createdAt
+            },
+            
+            // Copy một số thông tin để hiển thị
+            title: `Chia sẻ: ${originalPost.title}`,
+            description: shareComment || `Chia sẻ từ bài đăng của ${originalPost.authorFullname || 'người dùng'}`,
+            category: originalPost.category,
+            itemType: originalPost.itemType,
+            location: originalPost.location,
+            images: originalPost.images || [],
+            
+            // Bài chia sẻ tự động được duyệt
+            status: 'approved',
+            sharedFrom: originalPostId,
+            sharedFromUser: originalPost.userId
+        };
+
+        const result = await postServices.createPost(sharePayload);
+
+        // Gửi thông báo cho chủ bài gốc
+        if (originalPost.userId && originalPost.userId !== decoded._id) {
+            try {
+                await notificationServices.createNotification({
+                    userId: originalPost.userId,
+                    title: '🔗 Bài đăng được chia sẻ',
+                    message: `${sharerInfo.fullname} đã chia sẻ bài đăng "${originalPost.title}" của bạn`,
+                    type: 'post_shared',
+                    relatedId: originalPostId
+                });
+            } catch (notifyError) {
+                console.error('Failed to create share notification:', notifyError);
+            }
+        }
+
+        res.status(StatusCodes.CREATED).json({
+            message: 'Chia sẻ bài đăng thành công',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const postController = {
     createPost,
     getPostById,
@@ -495,6 +622,7 @@ export const postController = {
     markItemNotFound,
     updateReturnStatus,
     banPost,
-    unbanPost
+    unbanPost,
+    sharePost
 };
 

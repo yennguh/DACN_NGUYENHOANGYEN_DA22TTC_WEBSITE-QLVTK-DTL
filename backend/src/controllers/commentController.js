@@ -14,7 +14,7 @@ const createComment = async (req, res, next) => {
             postId: req.body.postId,
             userId: decoded._id,
             content: req.body.content,
-            image: req.file ? `/uploads/comments/${req.file.filename}` : null
+            image: req.file ? `/uploads/images/${req.file.filename}` : null
         };
 
         const result = await commentServices.createComment(payload);

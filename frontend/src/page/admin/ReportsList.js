@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Eye, Trash2, CheckCircle, Clock, X, Ban, Unlock } from 'lucide-react';
+import { AlertTriangle, Eye, Trash2, CheckCircle, Clock, X, Ban } from 'lucide-react';
 import { fetchReports, updateReport, deleteReport } from '../../api/reports.api';
-import { banPost, unbanPost, deletePost } from '../../api/posts.api';
+import { banPost, deletePost } from '../../api/posts.api';
 
 const ReportsList = () => {
     const [reports, setReports] = useState([]);
@@ -30,7 +30,8 @@ const ReportsList = () => {
         }
     };
 
-    useEffect(() => { loadReports(); }, [filter]);
+    useEffect(() => { loadReports(); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filter]);
 
     const handleUpdateStatus = async (id, status) => {
         try {
@@ -78,18 +79,6 @@ const ReportsList = () => {
             if (selectedReport) setSelectedReport(null);
         } catch (error) {
             alert('Có lỗi xảy ra khi cấm bài đăng');
-        }
-    };
-
-    // Gỡ cấm bài đăng
-    const handleUnbanPost = async (postId) => {
-        if (!window.confirm('Bạn có chắc muốn gỡ cấm bài đăng này?')) return;
-        try {
-            await unbanPost(postId);
-            alert('Đã gỡ cấm bài đăng!');
-            loadReports(pagination.page);
-        } catch (error) {
-            alert('Có lỗi xảy ra khi gỡ cấm bài đăng');
         }
     };
 

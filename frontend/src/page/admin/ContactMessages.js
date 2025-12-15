@@ -14,6 +14,7 @@ export default function ContactMessages() {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [statusFilter]);
 
     useEffect(() => {
@@ -172,8 +173,6 @@ export default function ContactMessages() {
                                 const lastMessage = lastReply ? lastReply.message : contact.message;
                                 const lastTime = lastReply ? lastReply.createdAt : contact.createdAt;
                                 const isUnread = contact.status === 'new';
-                                const hasNewAdminReply = contact.replies && contact.replies.length > 0 && 
-                                    contact.replies[contact.replies.length - 1].sender === 'user';
 
                                 return (
                                     <div
