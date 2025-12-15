@@ -43,17 +43,12 @@ export const getMyContacts = async () => {
 export const addReply = async (contactId, message, imageFile = null) => {
     try {
         const formData = new FormData();
-        if (message) {
-            formData.append('message', message);
-        }
+        formData.append('message', message || '');
         if (imageFile) {
             formData.append('image', imageFile);
         }
-        const response = await api.post(`/v1/contact/${contactId}/reply`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        // Không set Content-Type header để browser tự động set với boundary
+        const response = await api.post(`/v1/contact/${contactId}/reply`, formData);
         return response.data;
     } catch (error) {
         console.error("Lỗi gửi phản hồi:", error.response?.data || error.message);

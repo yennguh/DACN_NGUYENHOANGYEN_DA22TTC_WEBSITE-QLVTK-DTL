@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, Clock, User, MessageSquare } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Send, Clock, User, MessageSquare, Image, X } from 'lucide-react';
 import { fetchContacts, addReply, updateContact } from '../../api/contact.api';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8017';
 
 export default function ContactMessages() {
     const [contacts, setContacts] = useState([]);
@@ -10,11 +12,13 @@ export default function ContactMessages() {
     const [statusFilter, setStatusFilter] = useState('');
     const [replyMessage, setReplyMessage] = useState('');
     const [sending, setSending] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const messagesEndRef = useRef(null);
+    const imageInputRef = useRef(null);
 
     useEffect(() => {
         fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [statusFilter]);
 
     useEffect(() => {
@@ -36,7 +40,6 @@ export default function ContactMessages() {
             const result = await fetchContacts(params);
             if (result && result.data) {
                 setContacts(result.data);
-                // Auto select first unread if none selected
                 if (!selectedContact && result.data.length > 0) {
                     const unread = result.data.find(c => c.status === 'new');
                     setSelectedContact(unread || result.data[0]);
@@ -49,23 +52,50 @@ export default function ContactMessages() {
         }
     };
 
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Ảnh không được vượt quá 5MB');
+                return;
+            }
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeSelectedImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
+        }
+    };
+
     const handleSendReply = async (e) => {
         e.preventDefault();
-        if (!replyMessage.trim() || !selectedContact) return;
+        if ((!replyMessage.trim() && !selectedImage) || !selectedContact) return;
 
         setSending(true);
         try {
-            await addReply(selectedContact._id, replyMessage.trim());
+            await addReply(selectedContact._id, replyMessage.trim(), selectedImage);
             setReplyMessage('');
-            await fetchData();
-            // Update selected contact
+            removeSelectedImage();
+            
+            // Refresh data
             const result = await fetchContacts({ page: 1, limit: 100 });
             if (result && result.data) {
+                setContacts(result.data);
                 const updated = result.data.find(c => c._id === selectedContact._id);
                 if (updated) {
                     setSelectedContact(updated);
                 }
             }
+            scrollToBottom();
         } catch (error) {
             alert(error.response?.data?.message || 'Có lỗi xảy ra khi gửi phản hồi');
         } finally {
@@ -105,12 +135,15 @@ export default function ContactMessages() {
         if (!date) return '';
         const d = new Date(date);
         return d.toLocaleString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
         });
+    };
+
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return null;
+        if (imagePath.startsWith('data:') || imagePath.startsWith('http')) return imagePath;
+        return `${API_URL}${imagePath}`;
     };
 
     const filteredContacts = contacts.filter(contact => {
@@ -129,9 +162,8 @@ export default function ContactMessages() {
     return (
         <div className="h-screen flex flex-col bg-gray-100" style={{ height: 'calc(100vh - 80px)' }}>
             <div className="flex-1 flex overflow-hidden">
-                {/* Sidebar - Danh sách tin nhắn */}
+                {/* Sidebar */}
                 <div className="w-80 bg-white border-r flex flex-col">
-                    {/* Header với filter */}
                     <div className="p-4 border-b bg-blue-600 text-white">
                         <h2 className="font-semibold text-lg mb-3">Tin nhắn liên hệ</h2>
                         <div className="relative mb-2">
@@ -156,7 +188,6 @@ export default function ContactMessages() {
                         </select>
                     </div>
 
-                    {/* Danh sách */}
                     <div className="flex-1 overflow-y-auto">
                         {loading ? (
                             <div className="p-4 text-center text-gray-500 text-sm">Đang tải...</div>
@@ -167,9 +198,8 @@ export default function ContactMessages() {
                             </div>
                         ) : (
                             filteredContacts.map((contact) => {
-                                const lastReply = contact.replies && contact.replies.length > 0 
-                                    ? contact.replies[contact.replies.length - 1]
-                                    : null;
+                                const lastReply = contact.replies?.length > 0 
+                                    ? contact.replies[contact.replies.length - 1] : null;
                                 const lastMessage = lastReply ? lastReply.message : contact.message;
                                 const lastTime = lastReply ? lastReply.createdAt : contact.createdAt;
                                 const isUnread = contact.status === 'new';
@@ -196,7 +226,7 @@ export default function ContactMessages() {
                                             <span>{contact.email}</span>
                                         </div>
                                         <div className="text-sm text-gray-600 truncate mb-2">
-                                            {lastMessage.substring(0, 50)}{lastMessage.length > 50 ? '...' : ''}
+                                            {lastMessage?.substring(0, 50)}{lastMessage?.length > 50 ? '...' : ''}
                                         </div>
                                         <div className="text-xs text-gray-500 flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
@@ -209,11 +239,11 @@ export default function ContactMessages() {
                     </div>
                 </div>
 
-                {/* Main Chat Area */}
+                {/* Chat Area */}
                 <div className="flex-1 flex flex-col bg-white">
                     {selectedContact ? (
                         <>
-                            {/* Chat Header */}
+                            {/* Header */}
                             <div className="p-4 border-b bg-gray-50">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
@@ -228,16 +258,14 @@ export default function ContactMessages() {
                                     </div>
                                     <div className="text-right">
                                         <div className="text-sm font-semibold text-gray-800">{selectedContact.subject}</div>
-                                        <div className="text-xs text-gray-500">
-                                            {formatTime(selectedContact.createdAt)}
-                                        </div>
+                                        <div className="text-xs text-gray-500">{formatTime(selectedContact.createdAt)}</div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-                                {/* Tin nhắn đầu tiên từ user */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" style={{ maxHeight: 'calc(100vh - 320px)' }}>
+                                {/* First message from user */}
                                 <div className="flex justify-start">
                                     <div className="max-w-[70%]">
                                         <div className="bg-white border rounded-2xl rounded-tl-none px-4 py-2 shadow-sm">
@@ -249,13 +277,13 @@ export default function ContactMessages() {
                                     </div>
                                 </div>
 
-                                {/* Các phản hồi */}
-                                {selectedContact.replies && selectedContact.replies.map((reply, index) => (
+                                {/* Replies */}
+                                {selectedContact.replies?.map((reply, index) => (
                                     <div
                                         key={index}
                                         className={`flex ${reply.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
                                     >
-                                        <div className={`max-w-[70%]`}>
+                                        <div className="max-w-[70%]">
                                             <div
                                                 className={`rounded-2xl px-4 py-2 shadow-sm ${
                                                     reply.sender === 'admin'
@@ -263,13 +291,18 @@ export default function ContactMessages() {
                                                         : 'bg-white border rounded-tl-none text-gray-800'
                                                 }`}
                                             >
-                                                <p className="text-sm">{reply.message}</p>
+                                                {reply.message && <p className="text-sm">{reply.message}</p>}
+                                                {reply.image && (
+                                                    <img 
+                                                        src={getImageUrl(reply.image)}
+                                                        alt="Ảnh đính kèm"
+                                                        className="mt-2 max-w-full rounded-lg cursor-pointer hover:opacity-90"
+                                                        style={{ maxHeight: '200px' }}
+                                                        onClick={() => window.open(getImageUrl(reply.image), '_blank')}
+                                                    />
+                                                )}
                                             </div>
-                                            <div
-                                                className={`text-xs text-gray-500 mt-1 ${
-                                                    reply.sender === 'admin' ? 'text-right' : 'text-left'
-                                                }`}
-                                            >
+                                            <div className={`text-xs text-gray-500 mt-1 ${reply.sender === 'admin' ? 'text-right' : 'text-left'}`}>
                                                 {formatFullDate(reply.createdAt)}
                                             </div>
                                         </div>
@@ -280,7 +313,33 @@ export default function ContactMessages() {
 
                             {/* Input Area */}
                             <div className="p-4 border-t bg-white">
+                                {/* Image Preview */}
+                                {imagePreview && (
+                                    <div className="mb-3 relative inline-block">
+                                        <img src={imagePreview} alt="Preview" className="h-20 rounded-lg border" />
+                                        <button
+                                            onClick={removeSelectedImage}
+                                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
                                 <form onSubmit={handleSendReply} className="flex gap-2">
+                                    <input
+                                        type="file"
+                                        ref={imageInputRef}
+                                        onChange={handleImageSelect}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => imageInputRef.current?.click()}
+                                        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    >
+                                        <Image className="w-6 h-6" />
+                                    </button>
                                     <input
                                         type="text"
                                         value={replyMessage}
@@ -291,7 +350,7 @@ export default function ContactMessages() {
                                     />
                                     <button
                                         type="submit"
-                                        disabled={sending || !replyMessage.trim()}
+                                        disabled={sending || (!replyMessage.trim() && !selectedImage)}
                                         className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                     >
                                         <Send className="w-5 h-5" />

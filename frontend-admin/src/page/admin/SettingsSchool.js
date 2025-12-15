@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import AdminSection from './components/AdminSection';
 import { Building2, Mail, Phone, MapPin, Globe, Clock, Save, Edit2, X } from 'lucide-react';
 import { getSettings, updateSettings } from '../../api/settings.api';
-import logoSchool from '../../public/assets/logo.jpg';
 
 export default function SettingsSchool() {
     const [schoolInfo, setSchoolInfo] = useState({
@@ -127,8 +126,10 @@ export default function SettingsSchool() {
                 {/* Logo và tên trường */}
                 <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white">
                     <div className="flex flex-col md:flex-row items-center gap-6">
-                        <div className="w-32 h-32 bg-white rounded-full p-2 shadow-lg">
-                            <img src={logoSchool} alt="Logo trường" className="w-full h-full object-cover rounded-full" />
+                        <div className="w-32 h-32 bg-white rounded-full p-2 shadow-lg flex items-center justify-center">
+                            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                                TVU
+                            </div>
                         </div>
                         <div className="text-center md:text-left flex-1">
                             {isEditing ? (

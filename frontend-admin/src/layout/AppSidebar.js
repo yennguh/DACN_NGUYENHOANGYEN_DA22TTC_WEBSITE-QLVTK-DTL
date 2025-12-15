@@ -1,6 +1,5 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import logoHeader from "../public/assets/logo.jpg";
 import { AuthContext } from '../core/AuthContext';
 import { ChevronDown, CircleUser, LayoutDashboard, Settings, MessageSquare, CircleHelp, Users, AlertTriangle } from 'lucide-react';
 import { getImageUrl } from '../utils/constant';
@@ -185,11 +184,9 @@ export default function AppSidebar() {
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <img
-                                    src={logoHeader}
-                                    alt="logo"
-                                    className="w-full h-full object-contain p-1"
-                                />
+                                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                                    {user?.fullname?.charAt(0) || 'A'}
+                                </div>
                             )}
                         </div>
                         <div>

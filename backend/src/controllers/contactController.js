@@ -74,12 +74,16 @@ const addReply = async (req, res, next) => {
         const isAdmin = decoded && decoded.roles?.includes('admin');
         const replyData = {
             message: message || '',
-            image: imageUrl,
             sender: isAdmin ? 'admin' : 'user',
             senderId: decoded?._id || null,
             senderName: isAdmin ? 'Admin' : decoded?.fullname || req.body.senderName || 'User',
             createdAt: Date.now()
         };
+        
+        // Chỉ thêm image nếu có
+        if (imageUrl) {
+            replyData.image = imageUrl;
+        }
 
         const result = await contactServices.addReply(id, replyData);
 
