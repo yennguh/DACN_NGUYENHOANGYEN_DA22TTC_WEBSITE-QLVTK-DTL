@@ -31,4 +31,9 @@ Router.put('/updateUser', isAuth, uploadProfile, handleUploadError, userControll
 Router.put('/change-password', isAuth, userController.ChangePassword)
 Router.get('/:id', userController.GetUserById)
 Router.delete('/:id', isAuth, userController.DeleteUser)
+
+// Forgot password routes
+Router.post('/verify-reset', userController.VerifyReset)
+Router.post('/reset-password', userController.ResetPassword)
+
 export default Router

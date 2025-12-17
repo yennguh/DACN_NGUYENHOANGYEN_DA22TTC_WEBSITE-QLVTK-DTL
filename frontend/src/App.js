@@ -8,6 +8,7 @@ import HomePage from './page/home/HomePage';
 import LostItemsPage from './page/home/LostItemsPage';
 import LoginPage from './page/auth/LoginPage';
 import RegisterPage from './page/auth/RegisterPage';
+import ForgotPassword from './page/auth/ForgotPassword';
 import MainLayout from './layout/Mainlayout';
 import BaidangDetail from './page/baidang/BaidangDetail';
 import BaidangCreate from './page/baidang/BaidangCreate';
@@ -54,6 +55,7 @@ function App() {
           {/* Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Public & User Routes – dùng MainLayout */}
           <Route element={<MainLayout />}>

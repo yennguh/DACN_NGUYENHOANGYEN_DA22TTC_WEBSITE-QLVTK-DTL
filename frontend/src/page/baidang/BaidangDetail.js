@@ -361,12 +361,14 @@ const BaidangDetail = () => {
                     {/* Header - Người chia sẻ hoặc người đăng */}
                     <div className="flex items-center justify-between p-5 border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                            <Avatar src={user?.avatar} name={user?.fullname} size="lg" />
+                            <Link to={`/profile/${post.userId}`} className="cursor-pointer hover:opacity-80 transition">
+                                <Avatar src={user?.avatar} name={user?.fullname} size="lg" />
+                            </Link>
                             <div>
-                                <p className="font-semibold text-gray-900">
+                                <Link to={`/profile/${post.userId}`} className="font-semibold text-gray-900 hover:text-blue-600 transition">
                                     {user?.fullname || 'Người dùng'}
                                     {post.isShared && <span className="text-gray-500 font-normal text-sm ml-2">đã chia sẻ bài viết</span>}
-                                </p>
+                                </Link>
                                 <p className="text-sm text-gray-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{new Date(post.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
                             </div>
                         </div>
@@ -491,12 +493,6 @@ const BaidangDetail = () => {
                                 </div>
                                 {!editingContact ? (
                                     <div className="flex flex-wrap items-center gap-6">
-                                        {user && (
-                                            <div className="flex items-center gap-3">
-                                                <Avatar src={user.avatar} name={user.fullname} size="lg" />
-                                                <span className="font-semibold text-gray-800 text-lg">{user.fullname}</span>
-                                            </div>
-                                        )}
                                         {post.contactInfo?.phone && (
                                             <a href={`tel:${post.contactInfo.phone}`} className="flex items-center gap-2 text-gray-700 hover:text-blue-600 text-base">
                                                 <Phone className="w-5 h-5" /> {post.contactInfo.phone}

@@ -328,6 +328,93 @@ const GetUserById = async (req, res, next) => {
     }
 }
 
+// Xác thực email và số điện thoại để reset password
+const VerifyReset = async (req, res, next) => {
+    try {
+        const { email, phone } = req.body;
+
+        if (!email || !phone) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                message: 'Vui lòng nhập đầy đủ email và số điện thoại' 
+            });
+        }
+
+        // Tìm user với email và phone khớp
+        const user = await GET_DB().collection('users').findOne({ 
+            email: email,
+            phone: phone 
+        });
+
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({ 
+                message: 'Email hoặc số điện thoại không đúng!' 
+            });
+        }
+
+        // Kiểm tra nếu là tài khoản Google
+        if (!user.password && user.googleId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                message: 'Tài khoản này đăng nhập bằng Google, không thể đặt lại mật khẩu' 
+            });
+        }
+
+        return res.status(StatusCodes.OK).json({ 
+            success: true,
+            message: 'Xác thực thành công' 
+        });
+    } catch (error) {
+        console.error('Verify reset error:', error);
+        next(error);
+    }
+}
+
+// Đặt lại mật khẩu mới
+const ResetPassword = async (req, res, next) => {
+    try {
+        const { email, newPassword } = req.body;
+
+        if (!email || !newPassword) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                message: 'Vui lòng nhập đầy đủ thông tin' 
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                message: 'Mật khẩu mới phải có ít nhất 6 ký tự' 
+            });
+        }
+
+        // Tìm user
+        const user = await GET_DB().collection('users').findOne({ email: email });
+
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({ 
+                message: 'Không tìm thấy tài khoản' 
+            });
+        }
+
+        // Cập nhật mật khẩu
+        await GET_DB().collection('users').updateOne(
+            { email: email },
+            { 
+                $set: { 
+                    password: newPassword,
+                    updateAt: Date.now()
+                } 
+            }
+        );
+
+        return res.status(StatusCodes.OK).json({ 
+            success: true,
+            message: 'Đặt lại mật khẩu thành công' 
+        });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        next(error);
+    }
+}
+
 const ChangePassword = async (req, res, next) => {
     try {
         const decoded = req.jwtDecoded;
@@ -400,5 +487,7 @@ export const userController = {
     DeleteUser,
     GoogleLogin,
     ChangePassword,
-    GetUserById
+    GetUserById,
+    VerifyReset,
+    ResetPassword
 }

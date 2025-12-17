@@ -177,7 +177,7 @@ const LoginPage = () => {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="on">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                                 <div className="relative">
@@ -188,6 +188,8 @@ const LoginPage = () => {
                                             pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Email không hợp lệ" },
                                         })}
                                         type="email"
+                                        name="email"
+                                        autoComplete="email"
                                         placeholder="email@example.com"
                                         className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                     />
@@ -202,6 +204,8 @@ const LoginPage = () => {
                                     <input
                                         {...register("password", { required: "Mật khẩu là bắt buộc" })}
                                         type={passwordVisible ? "text" : "password"}
+                                        name="password"
+                                        autoComplete="current-password"
                                         placeholder="••••••••"
                                         className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                     />

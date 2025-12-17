@@ -316,7 +316,7 @@ const Profile = () => {
                     <div className="bg-white rounded-xl shadow-sm p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-bold text-gray-800">Bài đăng ({userPosts.length})</h2>
-                            <Link to="/baidang/create" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm">+ Đăng bài mới</Link>
+                            {isOwnProfile && <Link to="/baidang/create" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm">+ Đăng bài mới</Link>}
                         </div>
 
                         {loadingPosts ? (
@@ -356,6 +356,7 @@ const Profile = () => {
                                                         {post.status === 'approved' ? 'Đã duyệt' : post.status === 'pending' ? 'Chờ duyệt' : post.status === 'rejected' ? 'Từ chối' : 'Hoàn thành'}
                                                     </span>
                                                 </div>
+                                                {isOwnProfile && (
                                                 <div className="flex items-center gap-2">
                                                     <Link to={`/baidang/${post._id}`} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition" title="Chỉnh sửa">
                                                         <Edit2 className="w-4 h-4" />
@@ -364,6 +365,7 @@ const Profile = () => {
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -378,7 +380,7 @@ const Profile = () => {
                     <div className="bg-white rounded-xl shadow-sm p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-bold text-gray-800">Giới thiệu</h2>
-                            {!isEditing && (
+                            {isOwnProfile && !isEditing && (
                                 <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm">
                                     <Edit2 className="w-4 h-4" /> Chỉnh sửa
                                 </button>
