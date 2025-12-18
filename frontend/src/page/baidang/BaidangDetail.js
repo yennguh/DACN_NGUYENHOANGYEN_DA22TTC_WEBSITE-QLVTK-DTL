@@ -301,7 +301,7 @@ const BaidangDetail = () => {
                     <h4 className="font-bold text-blue-600 mb-2">{originalPost.title}</h4>
                     <p className="text-gray-600 text-sm line-clamp-3 mb-3">{originalPost.description}</p>
                     
-                    {/* Ảnh bài gốc - SỬ DỤNG PrivacyImage ĐỂ BLUR */}
+                    {/* Ảnh bài gốc - không blur khi xem chi tiết */}
                     {originalPost.images?.[0] && (
                         <div className="rounded-lg overflow-hidden mb-3 bg-gray-100">
                             <PrivacyImage 
@@ -310,6 +310,7 @@ const BaidangDetail = () => {
                                 className="w-full h-48 object-cover" 
                                 blur={true}
                                 postOwnerId={originalPostOwnerId}
+                                isPublicView={true}
                             />
                         </div>
                     )}
@@ -528,12 +529,12 @@ const BaidangDetail = () => {
                                     <Ban className="w-5 h-5 text-red-500" />
                                 </button>
                             )}
-                            <PrivacyImage src={post.images[currentImageIndex]} alt={post.title} className="w-full max-h-[600px] object-contain bg-gray-100" postOwnerId={post.userId} />
+                            <PrivacyImage src={post.images[currentImageIndex]} alt={post.title} className="w-full max-h-[600px] object-contain bg-gray-100" postOwnerId={post.userId} isPublicView={true} />
                             {post.images.length > 1 && (
                                 <div className="flex gap-2 p-4 bg-gray-50 overflow-x-auto">
                                     {post.images.map((img, i) => (
                                         <button key={i} onClick={() => setCurrentImageIndex(i)} className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${i === currentImageIndex ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'}`}>
-                                            <PrivacyImage src={img} alt="" className="w-full h-full object-cover" postOwnerId={post.userId} />
+                                            <PrivacyImage src={img} alt="" className="w-full h-full object-cover" postOwnerId={post.userId} isPublicView={true} />
                                         </button>
                                     ))}
                                 </div>

@@ -126,8 +126,17 @@ export default function SettingsSchool() {
                 {/* Logo và tên trường */}
                 <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white">
                     <div className="flex flex-col md:flex-row items-center gap-6">
-                        <div className="w-32 h-32 bg-white rounded-full p-2 shadow-lg flex items-center justify-center">
-                            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                        <div className="w-32 h-32 bg-white rounded-full p-2 shadow-lg flex items-center justify-center overflow-hidden">
+                            <img 
+                                src="/logo.jpg" 
+                                alt="Logo Đại học Trà Vinh" 
+                                className="w-full h-full object-cover rounded-full"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                }}
+                            />
+                            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full items-center justify-center text-white text-4xl font-bold hidden">
                                 TVU
                             </div>
                         </div>

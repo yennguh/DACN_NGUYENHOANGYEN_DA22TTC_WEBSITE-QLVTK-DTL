@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Lock, Eye, EyeOff, Shield, CheckCircle, AlertCircle, KeyRound } from 'lucide-react';
 import { changePassword } from '../../api/users.api';
 import { AuthContext } from '../../core/AuthContext';
+import { getImageUrl } from '../../utils/constant';
 
 export default function AdminPassword() {
     const { user } = useContext(AuthContext);
@@ -77,8 +78,21 @@ export default function AdminPassword() {
                 {/* User Info Card */}
                 <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center">
-                            <Shield className="w-8 h-8 text-white" />
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
+                            {user?.avatar ? (
+                                <img 
+                                    src={getImageUrl(user.avatar)} 
+                                    alt={user?.fullname || 'Admin'} 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`w-full h-full items-center justify-center text-white text-2xl font-bold ${user?.avatar ? 'hidden' : 'flex'}`}>
+                                {user?.fullname?.charAt(0)?.toUpperCase() || 'A'}
+                            </div>
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-gray-800">{user?.fullname || 'Admin'}</h3>

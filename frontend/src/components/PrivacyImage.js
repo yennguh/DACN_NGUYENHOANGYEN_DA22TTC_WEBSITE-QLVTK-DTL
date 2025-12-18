@@ -11,8 +11,9 @@ import { getImageUrl } from '../utils/constant';
  * @param {string} postOwnerId - ID của chủ bài đăng (nếu có)
  * @param {boolean} blur - Có blur hay không (mặc định true)
  * @param {boolean} forceBlurAll - Nếu true, blur tất cả trừ Admin (dùng cho trang danh sách)
+ * @param {boolean} isPublicView - Nếu true, không blur (dùng khi xem profile công khai hoặc chi tiết bài đăng)
  */
-const PrivacyImage = ({ src: rawSrc, alt, className = '', blur = true, onClick, postOwnerId, forceBlurAll = false, ...props }) => {
+const PrivacyImage = ({ src: rawSrc, alt, className = '', blur = true, onClick, postOwnerId, forceBlurAll = false, isPublicView = false, ...props }) => {
     const { token } = useContext(AuthContext);
     
     // Xử lý URL ảnh
@@ -21,6 +22,10 @@ const PrivacyImage = ({ src: rawSrc, alt, className = '', blur = true, onClick, 
     // Kiểm tra xem user hiện tại có cần blur không
     const needBlur = useMemo(() => {
         if (!blur) return false;
+        
+        // Nếu là public view (xem chi tiết bài đăng, xem profile) -> không blur
+        if (isPublicView) return false;
+        
         if (!token) return true; // Chưa đăng nhập -> blur
         
         try {
@@ -45,7 +50,7 @@ const PrivacyImage = ({ src: rawSrc, alt, className = '', blur = true, onClick, 
         } catch (err) {
             return true;
         }
-    }, [blur, token, postOwnerId, forceBlurAll]);
+    }, [blur, token, postOwnerId, forceBlurAll, isPublicView]);
     
     const canvasRef = useRef(null);
     const [loading, setLoading] = useState(true);
