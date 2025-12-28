@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Package, X, SlidersHorizontal, Plus } from "lucide-react";
-import { fetchPosts } from "../../api/posts.api";
+import { fetchPosts, fetchTopPosters } from "../../api/posts.api";
 import { AuthContext } from "../../core/AuthContext";
 import { jwtDecode } from "jwt-decode";
 import { PostListSkeleton } from '../../core/LoadingSpinner';
@@ -21,6 +21,7 @@ const LostItemsPage = () => {
     const [showMyPosts, setShowMyPosts] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [viewingUserName, setViewingUserName] = useState("");
+    const [topPosterIds, setTopPosterIds] = useState([]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -61,8 +62,26 @@ const LostItemsPage = () => {
 
     useEffect(() => {
         fetchData();
+        loadTopPosters();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categoryFilter, itemTypeFilter, locationFilter, searchTerm, showMyPosts, userIdFromUrl]);
+
+    const loadTopPosters = async () => {
+        try {
+            const result = await fetchTopPosters();
+            // API trả về { data: [...] } hoặc array trực tiếp
+            const topPosters = result?.data || result;
+            if (topPosters && Array.isArray(topPosters)) {
+                // Lấy userId của top poster đầu tiên (người đăng nhiều nhất)
+                // Backend trả về { userId: "...", totalPosts: ..., user: {...} }
+                const topIds = topPosters.slice(0, 1).map(p => p.userId);
+                console.log('Top poster IDs:', topIds);
+                setTopPosterIds(topIds);
+            }
+        } catch (error) {
+            console.error('Error loading top posters:', error);
+        }
+    };
 
     // Lấy tên user khi xem bài đăng của người khác
     useEffect(() => {
@@ -253,9 +272,16 @@ const LostItemsPage = () => {
                 {/* Posts List */}
                 {!loading && posts.length > 0 && (
                     <div className="space-y-6">
-                        {posts.map((item) => (
-                            <PostCard key={item._id} item={item} />
-                        ))}
+                        {posts.map((item) => {
+                            const itemUserId = String(item.userId || item.user?._id || '');
+                            return (
+                                <PostCard 
+                                    key={item._id} 
+                                    item={item} 
+                                    isTopPoster={topPosterIds.includes(itemUserId)}
+                                />
+                            );
+                        })}
                     </div>
                 )}
             </div>

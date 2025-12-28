@@ -38,6 +38,7 @@ const createPost = async (req, res, next) => {
             if (user) {
                 payload.authorFullname = user.fullname || '';
                 payload.authorAvatar = user.avatar || '';
+                payload.authorRoles = decoded.roles || ['user'];
             }
         } catch (error) {
             console.log('Error fetching user info:', error);
@@ -123,6 +124,7 @@ const updatePost = async (req, res, next) => {
         delete updatePayload.userId;
         delete updatePayload.authorFullname;
         delete updatePayload.authorAvatar;
+        delete updatePayload.authorRoles;
         delete updatePayload.existingImages; // Xóa field tạm
 
         // Chỉ cập nhật author info nếu là chủ bài đăng (không phải admin đang sửa bài của người khác)
@@ -132,6 +134,7 @@ const updatePost = async (req, res, next) => {
                 if (user) {
                     updatePayload.authorFullname = user.fullname || '';
                     updatePayload.authorAvatar = user.avatar || '';
+                    updatePayload.authorRoles = decoded.roles || ['user'];
                 }
             } catch (error) {
                 console.log('Error fetching user info:', error);

@@ -368,6 +368,9 @@ const BaidangDetail = () => {
                                     {post.isShared && <span className="text-gray-500 font-normal text-sm ml-2">đã chia sẻ bài viết</span>}
                                 </p>
                                 <p className="text-sm text-gray-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{new Date(post.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                {post.updatedAt && (new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60000) && (
+                                    <p className="text-xs text-gray-400 flex items-center gap-1">Cập nhật: {new Date(post.updatedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                )}
                             </div>
                         </div>
                         {/* Chỉ hiện badge category và return status nếu KHÔNG phải bài chia sẻ */}

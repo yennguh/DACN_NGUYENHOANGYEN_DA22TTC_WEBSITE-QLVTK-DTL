@@ -1,35 +1,37 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../core/AuthContext';
-import { ChevronDown, CircleUser, LayoutDashboard, Settings, MessageSquare, CircleHelp, Users, AlertTriangle } from 'lucide-react';
+import { ChevronDown, CircleUser, LayoutDashboard, Settings, MessageSquare, CircleHelp, Users, AlertTriangle, Globe, LogOut, FileText, PlusCircle, CheckCircle, Shield, Building, MapPin, Tag, Key } from 'lucide-react';
 import { getImageUrl } from '../utils/constant';
-
-const makeIcon = (label) => (
-    <span aria-hidden className="inline-block w-6 text-center">{label}</span>
-);
 
 const navItems = [
     {
-        icon: <LayoutDashboard />,
+        icon: <LayoutDashboard className="w-5 h-5" />,
         name: 'Dashboard',
         path: '/admin'
     },
     {
-        icon: <CircleHelp />,
+        icon: <Globe className="w-5 h-5" />,
+        name: 'Xem Website',
+        path: '/',
+        external: true
+    },
+    {
+        icon: <FileText className="w-5 h-5" />,
         name: 'Bài đăng',
         subItems: [
-            { name: 'Danh sách bài đăng', icon: makeIcon('•'), path: '/admin/lost-items' },
-            { name: 'Đăng tin mới', icon: makeIcon('•'), path: '/admin/admin-posts/create' },
-            { name: 'Đã trả đồ', icon: makeIcon('•'), path: '/admin/returned-items' }
+            { name: 'Danh sách bài đăng', icon: <CircleHelp className="w-4 h-4" />, path: '/admin/lost-items' },
+            { name: 'Đăng tin mới', icon: <PlusCircle className="w-4 h-4" />, path: '/admin/admin-posts/create' },
+            { name: 'Đã trả đồ', icon: <CheckCircle className="w-4 h-4" />, path: '/admin/returned-items' }
         ]
     },
     {
-        icon: <MessageSquare />,
+        icon: <MessageSquare className="w-5 h-5" />,
         name: 'Tin nhắn liên hệ',
         path: '/admin/contacts'
     },
     {
-        icon: <AlertTriangle />,
+        icon: <AlertTriangle className="w-5 h-5" />,
         name: 'Tố cáo bài đăng',
         path: '/admin/reports'
     },
@@ -37,28 +39,28 @@ const navItems = [
 
 const othersItems = [
     {
-        icon: <Users />,
+        icon: <Users className="w-5 h-5" />,
         name: 'Quản lý người dùng',
         subItems: [
-            { name: 'Phân quyền', icon: makeIcon('•'), path: '/admin/roles' }
+            { name: 'Phân quyền', icon: <Shield className="w-4 h-4" />, path: '/admin/roles' }
         ]
     },
     {
-        icon: <Settings />,
+        icon: <Settings className="w-5 h-5" />,
         name: 'Cấu hình',
         subItems: [
-            { name: 'Thông tin trường', icon: makeIcon('•'), path: '/admin/settings/school' },
-            { name: 'Danh mục', icon: makeIcon('•'), path: '/admin/settings/categories' },
-            { name: 'Vị trí', icon: makeIcon('•'), path: '/admin/settings/locations' }
+            { name: 'Thông tin trường', icon: <Building className="w-4 h-4" />, path: '/admin/settings/school' },
+            { name: 'Danh mục', icon: <Tag className="w-4 h-4" />, path: '/admin/settings/categories' },
+            { name: 'Vị trí', icon: <MapPin className="w-4 h-4" />, path: '/admin/settings/locations' }
         ]
     },
     {
-        icon: <CircleUser />,
+        icon: <CircleUser className="w-5 h-5" />,
         name: 'Tài khoản',
         subItems: [
-            { name: 'Thông tin cá nhân', icon: makeIcon('•'), path: '/admin/profile' },
-            { name: 'Đổi mật khẩu', icon: makeIcon('•'), path: '/admin/profile/password' },
-            { name: 'Đăng xuất', icon: makeIcon('•'), path: '/logout' }
+            { name: 'Thông tin cá nhân', icon: <CircleUser className="w-4 h-4" />, path: '/admin/profile' },
+            { name: 'Đổi mật khẩu', icon: <Key className="w-4 h-4" />, path: '/admin/profile/password' },
+            { name: 'Đăng xuất', icon: <LogOut className="w-4 h-4" />, path: '/logout' }
         ]
     },
 ];
@@ -120,20 +122,24 @@ export default function AppSidebar() {
     };
 
     const renderMenuItems = (items, menuType) => (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-1">
             {items.map((nav, idx) => (
                 <li key={nav.name}>
                     {nav.subItems ? (
                         <div>
                             <button
                                 onClick={() => handleSubmenuToggle(idx, menuType)}
-                                className={`flex items-center gap-3 w-full p-2 rounded hover:bg-[#246188]`}
+                                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-200 ${
+                                    openSubmenu && openSubmenu.type === menuType && openSubmenu.index === idx 
+                                        ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700' 
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                }`}
                             >
-                                <span className="w-6">{nav.icon}</span>
-                                <span className="flex-1 text-sm text-start">{nav.name}</span>
-                                <span className={`ml-auto transition-transform ${openSubmenu && openSubmenu.type === menuType && openSubmenu.index === idx ? 'rotate-180' : ''}`}>
-                                    <ChevronDown className='w-4' />
+                                <span className={`${openSubmenu && openSubmenu.type === menuType && openSubmenu.index === idx ? 'text-blue-600' : 'text-gray-500'}`}>
+                                    {nav.icon}
                                 </span>
+                                <span className="flex-1 text-sm font-medium text-left">{nav.name}</span>
+                                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openSubmenu && openSubmenu.type === menuType && openSubmenu.index === idx ? 'rotate-180 text-blue-600' : 'text-gray-400'}`} />
                             </button>
 
                             <div
@@ -143,16 +149,28 @@ export default function AppSidebar() {
                                     height: openSubmenu && openSubmenu.type === menuType && openSubmenu.index === idx ? `${subMenuHeight[`${menuType}-${idx}`] || 0}px` : '0px',
                                 }}
                             >
-                                <ul className="pl-8 pt-2 pb-2">
+                                <ul className="ml-4 pl-4 border-l-2 border-gray-200 py-2 space-y-1">
                                     {nav.subItems.map((s) => (
                                         <li key={s.name}>
                                             {s.path === '/logout' ? (
-                                                <button onClick={handleLogout} type="submit" className={`block w-full text-left p-1 rounded hover:bg-[#246188] text-sm ${isActive(s.path) ? 'bg-[#246188] font-semibold ' : ''}`}>
-                                                    {s.icon} {s.name}
+                                                <button 
+                                                    onClick={handleLogout} 
+                                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-all"
+                                                >
+                                                    {s.icon}
+                                                    <span>{s.name}</span>
                                                 </button>
                                             ) : (
-                                                <Link to={s.path} className={`block p-1 rounded hover:bg-[#246188] text-sm ${isActive(s.path) ? 'bg-[#246188] font-semibold ' : ''}`}>
-                                                    {s.icon} {s.name}
+                                                <Link 
+                                                    to={s.path} 
+                                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                                                        isActive(s.path) 
+                                                            ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md shadow-blue-500/30' 
+                                                            : 'text-gray-600 hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    {s.icon}
+                                                    <span>{s.name}</span>
                                                 </Link>
                                             )}
                                         </li>
@@ -161,9 +179,18 @@ export default function AppSidebar() {
                             </div>
                         </div>
                     ) : (
-                        <Link to={nav.path} className={`flex items-center gap-3 p-2 rounded hover:bg-[#246188] ${isActive(nav.path) ? 'font-semibold bg-[#246188]' : ''}`}>
-                            <span className="w-6">{nav.icon}</span>
-                            <span className="text-sm">{nav.name}</span>
+                        <Link 
+                            to={nav.path} 
+                            target={nav.external ? '_blank' : undefined}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                                isActive(nav.path) 
+                                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30' 
+                                    : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                        >
+                            <span className={isActive(nav.path) ? 'text-white' : 'text-gray-500'}>{nav.icon}</span>
+                            <span className="text-sm font-medium">{nav.name}</span>
+                            {nav.external && <span className="ml-auto text-xs opacity-60">↗</span>}
                         </Link>
                     )}
                 </li>
@@ -172,11 +199,12 @@ export default function AppSidebar() {
     );
 
     return (
-        <aside className={`bg-[#3989bd] border-r border-gray-200 h-screen p-4 text-white`} style={{ width: isExpanded ? 260 : 90 }}>
-            <div className="flex items-center justify-between mb-4">
-                <Link to="/admin" className="flex items-center gap-2">
-                    <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-white flex items-center justify-center shadow-lg border-2 border-blue-200">
+        <aside className="bg-white border-r border-gray-200 h-screen flex flex-col shadow-xl" style={{ width: isExpanded ? 280 : 90 }}>
+            {/* Header với Avatar */}
+            <div className="p-5 border-b border-gray-100">
+                <Link to="/admin" className="flex items-center gap-4">
+                    <div className="relative">
+                        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg ring-4 ring-blue-100">
                             {user?.avatar ? (
                                 <img
                                     src={getImageUrl(user.avatar)}
@@ -184,35 +212,44 @@ export default function AppSidebar() {
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                                <span className="text-white text-xl font-bold">
                                     {user?.fullname?.charAt(0) || 'A'}
-                                </div>
+                                </span>
                             )}
                         </div>
-                        <div>
-                            <p className="text-sm opacity-80">Xin chào,</p>
-                            <p className="font-semibold">{user?.fullname || 'Admin'}</p>
-                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 font-medium">Xin chào,</p>
+                        <p className="font-bold text-gray-800 truncate">{user?.fullname || 'Admin'}</p>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 text-xs font-semibold rounded-full mt-1">
+                            <Shield className="w-3 h-3" />
+                            Admin
+                        </span>
                     </div>
                 </Link>
             </div>
-            <hr></hr>
-            <nav className="overflow-y-auto h-[calc(100%-100px)] mt-3">
+
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto p-4">
                 <div className="mb-6">
-                    <h3 className="text-xs text-white uppercase mb-2 font-bold">Menu</h3>
+                    <h3 className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Menu chính</h3>
                     {renderMenuItems(navItems, 'main')}
                 </div>
 
                 <div>
-                    <h3 className="text-xs text-white uppercase mb-2 font-bold">Others</h3>
+                    <h3 className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Cài đặt</h3>
                     {renderMenuItems(othersItems, 'others')}
                 </div>
             </nav>
 
-            <div className="mt-auto pt-4 text-center">
-                {isExpanded && (
-                    <div className="text-xs text-gray-500">© {new Date().getFullYear()} QLVTK-DTL</div>
-                )}
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 text-center">
+                    <p className="text-xs text-gray-500">© {new Date().getFullYear()}</p>
+                    <p className="text-sm font-semibold text-gray-700">QLVTK-ĐTL</p>
+                    <p className="text-xs text-gray-500">Đại học Trà Vinh</p>
+                </div>
             </div>
         </aside>
     );

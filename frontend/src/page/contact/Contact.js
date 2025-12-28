@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { 
     MessageSquare, 
     Send, 
@@ -19,6 +20,7 @@ import {
 import { sendContact, fetchContacts, addReply } from '../../api/contact.api';
 import { AuthContext } from '../../core/AuthContext';
 import { inforUser } from '../../api/users.api';
+import { getImageUrl } from '../../utils/constant';
 
 const Contact = () => {
     const { token, user } = useContext(AuthContext);
@@ -502,13 +504,24 @@ const Contact = () => {
                                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                                         {/* First message */}
                                         <div className="flex justify-end">
-                                            <div className="max-w-[75%]">
+                                            <div className="max-w-[70%]">
                                                 <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-lg">
                                                     <p className="text-sm leading-relaxed">{selectedContact.message}</p>
                                                 </div>
                                                 <div className="text-xs text-gray-400 mt-1.5 text-right flex items-center justify-end gap-1">
                                                     <Clock className="w-3 h-3" />
                                                     {formatFullDate(selectedContact.createdAt)}
+                                                </div>
+                                            </div>
+                                            <div className="flex-shrink-0 ml-2">
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
+                                                    {userInfo?.avatar ? (
+                                                        <img src={getImageUrl(userInfo.avatar)} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-white font-bold text-sm">
+                                                            {(userInfo?.fullname || user?.fullname || 'U').charAt(0).toUpperCase()}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -519,13 +532,27 @@ const Contact = () => {
                                                 key={index}
                                                 className={`flex ${reply.sender === 'admin' ? 'justify-start' : 'justify-end'}`}
                                             >
-                                                <div className="max-w-[75%]">
+                                                {reply.sender === 'admin' && (
+                                                    <Link 
+                                                        to={reply.senderId ? `/profile/${reply.senderId}` : '#'}
+                                                        className="flex-shrink-0 mr-2"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-green-300 transition-all">
+                                                            {reply.senderAvatar ? (
+                                                                <img src={getImageUrl(reply.senderAvatar)} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <User className="w-5 h-5 text-white" />
+                                                            )}
+                                                        </div>
+                                                    </Link>
+                                                )}
+                                                <div className="max-w-[70%]">
                                                     {reply.sender === 'admin' && (
                                                         <div className="flex items-center gap-2 mb-1.5">
-                                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
-                                                                <User className="w-3 h-3 text-white" />
-                                                            </div>
-                                                            <span className="text-xs font-medium text-gray-600">Admin</span>
+                                                            <span className="text-xs font-medium text-gray-600">
+                                                                {reply.senderName || 'Admin'}
+                                                            </span>
+                                                            <span className="px-1.5 py-0.5 bg-green-100 text-green-600 text-xs rounded-full font-medium">Admin</span>
                                                         </div>
                                                     )}
                                                     <div
@@ -553,6 +580,19 @@ const Contact = () => {
                                                         {formatFullDate(reply.createdAt)}
                                                     </div>
                                                 </div>
+                                                {reply.sender !== 'admin' && (
+                                                    <div className="flex-shrink-0 ml-2">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
+                                                            {userInfo?.avatar ? (
+                                                                <img src={getImageUrl(userInfo.avatar)} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <span className="text-white font-bold text-sm">
+                                                                    {(userInfo?.fullname || user?.fullname || 'U').charAt(0).toUpperCase()}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                         <div ref={messagesEndRef} />

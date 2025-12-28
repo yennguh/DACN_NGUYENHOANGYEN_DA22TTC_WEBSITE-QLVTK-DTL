@@ -301,7 +301,7 @@ const BaidangDetail = () => {
                     <h4 className="font-bold text-blue-600 mb-2">{originalPost.title}</h4>
                     <p className="text-gray-600 text-sm line-clamp-3 mb-3">{originalPost.description}</p>
                     
-                    {/* Ảnh bài gốc - không blur khi xem chi tiết */}
+                    {/* Ảnh bài gốc - blur cho người khác */}
                     {originalPost.images?.[0] && (
                         <div className="rounded-lg overflow-hidden mb-3 bg-gray-100">
                             <PrivacyImage 
@@ -310,7 +310,6 @@ const BaidangDetail = () => {
                                 className="w-full h-48 object-cover" 
                                 blur={true}
                                 postOwnerId={originalPostOwnerId}
-                                isPublicView={true}
                             />
                         </div>
                     )}
@@ -371,6 +370,9 @@ const BaidangDetail = () => {
                                     {post.isShared && <span className="text-gray-500 font-normal text-sm ml-2">đã chia sẻ bài viết</span>}
                                 </Link>
                                 <p className="text-sm text-gray-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{new Date(post.createdAt).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                {post.updatedAt && (new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60000) && (
+                                    <p className="text-xs text-gray-400 flex items-center gap-1">Cập nhật: {new Date(post.updatedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                )}
                             </div>
                         </div>
                         {/* Chỉ hiện badge category và return status nếu KHÔNG phải bài chia sẻ */}
@@ -529,14 +531,16 @@ const BaidangDetail = () => {
                                     <Ban className="w-5 h-5 text-red-500" />
                                 </button>
                             )}
-                            <PrivacyImage src={post.images[currentImageIndex]} alt={post.title} className="w-full max-h-[600px] object-contain bg-gray-100" postOwnerId={post.userId} isPublicView={true} />
+                            <PrivacyImage src={post.images[currentImageIndex]} alt={post.title} className="w-full max-h-[600px] object-contain bg-gray-100" postOwnerId={post.userId} />
                             {post.images.length > 1 && (
                                 <div className="flex gap-2 p-4 bg-gray-50 overflow-x-auto">
                                     {post.images.map((img, i) => (
                                         <button key={i} onClick={() => setCurrentImageIndex(i)} className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${i === currentImageIndex ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'}`}>
-                                            <PrivacyImage src={img} alt="" className="w-full h-full object-cover" postOwnerId={post.userId} isPublicView={true} />
+                                            <PrivacyImage src={img} alt="" className="w-full h-full object-cover" postOwnerId={post.userId} />
                                         </button>
                                     ))}
+                                </div>
+                            )}
                                 </div>
                             )}
                         </div>
@@ -654,7 +658,6 @@ const BaidangDetail = () => {
                         </div>
                     </div>
                 </div>
-            </div>
 
             {/* Modal Tố cáo */}
             {showReportModal && (

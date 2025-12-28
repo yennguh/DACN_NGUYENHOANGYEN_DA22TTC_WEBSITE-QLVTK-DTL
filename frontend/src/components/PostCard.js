@@ -22,7 +22,7 @@ const formatTimeAgo = (dateString) => {
     return date.toLocaleDateString('vi-VN');
 };
 
-const PostCard = ({ item }) => {
+const PostCard = ({ item, isTopPoster = false }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { token, user } = useContext(AuthContext);
@@ -30,6 +30,9 @@ const PostCard = ({ item }) => {
     const [comments, setComments] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
+
+    // Kiểm tra xem user có phải admin không
+    const isAdmin = item.user?.roles?.includes('admin') || item.authorRoles?.includes('admin');
 
     // Kiểm tra trạng thái yêu thích từ localStorage
     useEffect(() => {
@@ -53,23 +56,18 @@ const PostCard = ({ item }) => {
     };
 
     const handleViewDetail = () => {
-        if (token) {
-            navigate(`/baidang/${item._id}`);
-        } else {
-            // Lưu trang hiện tại để sau khi đăng nhập quay lại
-            navigate('/login', { state: { from: location } });
-        }
+        // Cho phép xem chi tiết mà không cần đăng nhập
+        navigate(`/baidang/${item._id}`);
     };
 
     // Click vào bài gốc trong bài chia sẻ
     const handleViewOriginalPost = (e) => {
         e.stopPropagation();
-        if (token && item.originalPost?._id) {
+        // Cho phép xem bài gốc mà không cần đăng nhập
+        if (item.originalPost?._id) {
             navigate(`/baidang/${item.originalPost._id}`);
-        } else if (token && item.sharedFrom) {
+        } else if (item.sharedFrom) {
             navigate(`/baidang/${item.sharedFrom}`);
-        } else {
-            navigate('/login', { state: { from: location } });
         }
     };
 
@@ -103,7 +101,7 @@ const PostCard = ({ item }) => {
     };
 
     // Component Avatar với xử lý lỗi và link đến profile
-    const Avatar = ({ src, name, size = 'md', userId }) => {
+    const Avatar = ({ src, name, size = 'md', userId, isTopPoster: isTop = false }) => {
         const [imgError, setImgError] = useState(false);
         const sizes = { sm: 'w-9 h-9 text-xs', md: 'w-11 h-11 text-sm', lg: 'w-12 h-12 text-base' };
         const initial = name?.substring(0, 1).toUpperCase() || 'U';
@@ -120,7 +118,7 @@ const PostCard = ({ item }) => {
         );
 
         const avatarWrapper = (
-            <div className={`${sizes[size]} rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all`}>
+            <div className={`${sizes[size]} rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all ${isTop ? 'ring-4 ring-yellow-400 ring-offset-2' : ''}`}>
                 {avatarContent}
             </div>
         );
@@ -154,16 +152,26 @@ const PostCard = ({ item }) => {
     // Nếu là bài chia sẻ - hiển thị khác
     if (item.isShared && item.originalPost) {
         return (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div className={`bg-white rounded-2xl border-2 overflow-hidden hover:shadow-xl transition-all duration-300 ${isTopPoster ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-gray-200'}`}>
                 {/* Header - Người chia sẻ */}
                 <div className="p-4 flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                        <Avatar src={item.user?.avatar || item.authorAvatar} name={item.user?.fullname || item.authorFullname} userId={item.user?._id || item.userId} />
+                        <Avatar src={item.user?.avatar || item.authorAvatar} name={item.user?.fullname || item.authorFullname} userId={item.user?._id || item.userId} isTopPoster={isTopPoster} />
                         <div>
                             <Link to={`/profile/${item.user?._id || item.userId}`} onClick={(e) => e.stopPropagation()} className="hover:underline">
-                                <p className="font-semibold text-gray-900">
+                                <p className="font-semibold text-gray-900 flex items-center gap-2">
                                     {item.user?.fullname || item.authorFullname || 'Người dùng'}
-                                    <span className="text-gray-500 font-normal text-sm ml-1">đã chia sẻ</span>
+                                    {isAdmin && (
+                                        <span className="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-bold rounded-full">
+                                            Admin
+                                        </span>
+                                    )}
+                                    {isTopPoster && (
+                                        <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold rounded-full">
+                                            🏆 Top
+                                        </span>
+                                    )}
+                                    <span className="text-gray-500 font-normal text-sm">đã chia sẻ</span>
                                 </p>
                             </Link>
                             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -255,14 +263,26 @@ const PostCard = ({ item }) => {
 
     // Bài đăng thường
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+        <div className={`bg-white rounded-2xl border-2 overflow-hidden hover:shadow-xl transition-all duration-300 ${isTopPoster ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-gray-200'}`}>
             {/* Header - Avatar, Name, Time, Location */}
             <div className="p-4 flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                    <Avatar src={item.user?.avatar || item.authorAvatar} name={item.user?.fullname || item.authorFullname} userId={item.user?._id || item.userId} />
+                    <Avatar src={item.user?.avatar || item.authorAvatar} name={item.user?.fullname || item.authorFullname} userId={item.user?._id || item.userId} isTopPoster={isTopPoster} />
                     <div>
                         <Link to={`/profile/${item.user?._id || item.userId}`} onClick={(e) => e.stopPropagation()} className="hover:underline">
-                            <p className="font-semibold text-gray-900">{item.user?.fullname || item.authorFullname || 'Người dùng'}</p>
+                            <p className="font-semibold text-gray-900 flex items-center gap-2">
+                                {item.user?.fullname || item.authorFullname || 'Người dùng'}
+                                {isAdmin && (
+                                    <span className="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-bold rounded-full">
+                                        Admin
+                                    </span>
+                                )}
+                                {isTopPoster && (
+                                    <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold rounded-full">
+                                        🏆 Top
+                                    </span>
+                                )}
+                            </p>
                         </Link>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                             <span className="flex items-center gap-1">

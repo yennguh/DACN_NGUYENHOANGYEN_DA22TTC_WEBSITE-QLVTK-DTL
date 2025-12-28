@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { contactServices } from "../services/contactServices.js";
 import { notificationServices } from "../services/notificationServices.js";
+import { userServices } from "../services/userServices.js";
 
 const createContact = async (req, res, next) => {
     try {
@@ -72,11 +73,27 @@ const addReply = async (req, res, next) => {
 
         // Determine sender type
         const isAdmin = decoded && decoded.roles?.includes('admin');
+        
+        // Lấy thông tin user (bao gồm avatar)
+        let senderInfo = { fullname: 'User', avatar: null };
+        if (decoded?._id) {
+            try {
+                const userInfo = await userServices.GetUserInfor(decoded._id);
+                if (userInfo) {
+                    senderInfo.fullname = userInfo.fullname || 'User';
+                    senderInfo.avatar = userInfo.avatar || null;
+                }
+            } catch (err) {
+                console.log('Error fetching user info for reply:', err);
+            }
+        }
+        
         const replyData = {
             message: message || '',
             sender: isAdmin ? 'admin' : 'user',
             senderId: decoded?._id || null,
-            senderName: isAdmin ? 'Admin' : decoded?.fullname || req.body.senderName || 'User',
+            senderName: isAdmin ? senderInfo.fullname : (decoded?.fullname || req.body.senderName || 'User'),
+            senderAvatar: senderInfo.avatar,
             createdAt: Date.now()
         };
         

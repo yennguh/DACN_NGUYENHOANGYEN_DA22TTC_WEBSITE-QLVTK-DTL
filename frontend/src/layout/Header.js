@@ -72,15 +72,12 @@ export default function Header() {
             <img 
               src={logoHeader} 
               alt="logo" 
-              className="w-16 h-16 object-contain rounded-2xl shadow-lg group-hover:shadow-xl transition-all border-2 border-blue-100" 
+              className="w-16 h-16 object-cover rounded-full shadow-lg group-hover:shadow-xl transition-all border-2 border-blue-100" 
             />
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-              <span className="text-white text-xs">✓</span>
-            </div>
           </div>
           <div>
             <h1 className="font-bold text-gray-800 text-xl">ĐH Trà Vinh</h1>
-            <p className="text-sm text-gray-500">Hệ thống tìm kiếm đồ thất lạc</p>
+            <p className="text-sm text-gray-500">Website quản lý và tìm kiếm đồ thất lạc trong trường Đại học Trà Vinh</p>
           </div>
         </Link>
 

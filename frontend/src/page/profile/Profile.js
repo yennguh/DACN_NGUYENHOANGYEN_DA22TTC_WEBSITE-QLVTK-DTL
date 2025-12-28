@@ -7,6 +7,7 @@ import { fetchPosts, deletePost } from '../../api/posts.api';
 import { AuthContext } from '../../core/AuthContext';
 import { getImageUrl } from '../../utils/constant';
 import { ProfileSkeleton } from '../../core/LoadingSpinner';
+import PrivacyImage from '../../components/PrivacyImage';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -333,7 +334,13 @@ const Profile = () => {
                                     <div key={post._id} className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition group">
                                         <Link to={`/baidang/${post._id}`} className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                                             {post.images?.[0] ? (
-                                                <img src={getImageUrl(post.images[0])} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                                                <PrivacyImage 
+                                                    src={post.images[0]} 
+                                                    alt={post.title} 
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition" 
+                                                    postOwnerId={post.userId || post.user?._id}
+                                                    isPublicView={isOwnProfile}
+                                                />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center"><Package className="w-8 h-8 text-gray-300" /></div>
                                             )}
@@ -462,7 +469,13 @@ const Profile = () => {
                             <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                                 {allPhotos.map((photo, index) => (
                                     <Link key={index} to={`/baidang/${photo.postId}`} className="aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 transition group">
-                                        <img src={getImageUrl(photo.image)} alt={photo.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                                        <PrivacyImage 
+                                            src={photo.image} 
+                                            alt={photo.title} 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition" 
+                                            postOwnerId={user?._id}
+                                            isPublicView={isOwnProfile}
+                                        />
                                     </Link>
                                 ))}
                             </div>

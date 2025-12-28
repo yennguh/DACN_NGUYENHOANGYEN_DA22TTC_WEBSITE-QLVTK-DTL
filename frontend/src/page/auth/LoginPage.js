@@ -17,19 +17,64 @@ const LoginPage = () => {
     const [googleLoading, setGoogleLoading] = useState(false);
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [error, setError] = useState(null);
-    const { register, handleSubmit, formState: { errors } } = useForm({ mode: "onTouched" });
+    const [rememberMe, setRememberMe] = useState(false);
+    
+    // Lấy thông tin đã lưu từ localStorage
+    const getSavedCredentials = () => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('savedCredentials') || 'null');
+            if (saved) {
+                return {
+                    email: saved.email,
+                    password: atob(saved.password) // decode base64
+                };
+            }
+        } catch (e) {
+            localStorage.removeItem('savedCredentials');
+        }
+        return null;
+    };
+    const savedCredentials = getSavedCredentials();
+    
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm({ 
+        mode: "onTouched",
+        defaultValues: {
+            email: savedCredentials?.email || '',
+            password: savedCredentials?.password || ''
+        }
+    });
 
-    const handleLoginSuccess = useCallback((accessToken, refreshToken) => {
+    // Set rememberMe nếu có thông tin đã lưu
+    useEffect(() => {
+        if (savedCredentials) {
+            setRememberMe(true);
+        }
+    }, []);
+
+    const handleLoginSuccess = useCallback((accessToken, refreshToken, email = null, password = null) => {
+        // Lưu hoặc xóa thông tin đăng nhập dựa vào rememberMe
+        if (rememberMe && email && password) {
+            // Mã hóa đơn giản để không lưu plain text (không phải bảo mật cao, chỉ để tránh nhìn thấy trực tiếp)
+            localStorage.setItem('savedCredentials', JSON.stringify({
+                email: email,
+                password: btoa(password) // encode base64
+            }));
+        } else if (!rememberMe) {
+            localStorage.removeItem('savedCredentials');
+        }
+        
+        // Thời gian hết hạn cookie dựa vào rememberMe
+        const cookieExpires = rememberMe ? 30 : 7;
+        
         login(accessToken, refreshToken);
-        Cookies.set("accessToken", accessToken, { expires: 7 });
-        if (refreshToken) Cookies.set("refreshToken", refreshToken, { expires: 30 });
+        Cookies.set("accessToken", accessToken, { expires: cookieExpires });
+        if (refreshToken) Cookies.set("refreshToken", refreshToken, { expires: cookieExpires });
         localStorage.setItem("token", accessToken);
         window.dispatchEvent(new Event('userLogin'));
         
-        // Quay lại trang trước đó nếu có, không thì về trang chủ
         const from = location.state?.from?.pathname || '/';
         navigate(from, { replace: true });
-    }, [login, navigate, location.state]);
+    }, [login, navigate, location.state, rememberMe]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -73,7 +118,7 @@ const LoginPage = () => {
                     return;
                 }
 
-                handleLoginSuccess(accessToken, refreshToken);
+                handleLoginSuccess(accessToken, refreshToken, data.email, data.password);
                 return;
             }
             setError(res?.message || 'Tài khoản hoặc mật khẩu không đúng!');
@@ -177,9 +222,9 @@ const LoginPage = () => {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="on">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" id="user-login-form" autoComplete="on">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                                <label htmlFor="user-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                                 <div className="relative">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                     <input
@@ -188,8 +233,9 @@ const LoginPage = () => {
                                             pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Email không hợp lệ" },
                                         })}
                                         type="email"
+                                        id="user-email"
                                         name="email"
-                                        autoComplete="email"
+                                        autoComplete="username email"
                                         placeholder="email@example.com"
                                         className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                     />
@@ -198,12 +244,13 @@ const LoginPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mật khẩu</label>
+                                <label htmlFor="user-password" className="block text-sm font-medium text-gray-700 mb-1.5">Mật khẩu</label>
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                     <input
                                         {...register("password", { required: "Mật khẩu là bắt buộc" })}
                                         type={passwordVisible ? "text" : "password"}
+                                        id="user-password"
                                         name="password"
                                         autoComplete="current-password"
                                         placeholder="••••••••"
@@ -222,8 +269,13 @@ const LoginPage = () => {
 
                             <div className="flex items-center justify-between">
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                    <span className="text-sm text-gray-600">Ghi nhớ đăng nhập</span>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                                    />
+                                    <span className="text-sm text-gray-600">Ghi nhớ mật khẩu</span>
                                 </label>
                                 <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                                     Quên mật khẩu?
