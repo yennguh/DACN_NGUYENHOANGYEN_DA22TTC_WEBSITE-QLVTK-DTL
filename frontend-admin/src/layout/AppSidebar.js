@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../core/AuthContext';
-import { ChevronDown, CircleUser, LayoutDashboard, Settings, MessageSquare, CircleHelp, Users, AlertTriangle, Globe, LogOut, FileText, PlusCircle, CheckCircle, Shield, Building, MapPin, Tag, Key } from 'lucide-react';
+import { ChevronDown, CircleUser, LayoutDashboard, Settings, MessageSquare, CircleHelp, Users, AlertTriangle, LogOut, FileText, PlusCircle, CheckCircle, Shield, Building, MapPin, Tag, Key } from 'lucide-react';
 import { getImageUrl } from '../utils/constant';
 
 const navItems = [
@@ -9,12 +9,6 @@ const navItems = [
         icon: <LayoutDashboard className="w-5 h-5" />,
         name: 'Dashboard',
         path: '/admin'
-    },
-    {
-        icon: <Globe className="w-5 h-5" />,
-        name: 'Xem Website',
-        path: '/',
-        external: true
     },
     {
         icon: <FileText className="w-5 h-5" />,
