@@ -71,3 +71,25 @@ export const getContactById = async (id) => {
     }
 };
 
+// Xóa 1 bên (ẩn với user)
+export const hideContactForUser = async (id) => {
+    try {
+        const response = await api.patch(`/v1/contact/${id}/hide-user`);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi ẩn liên hệ:", error.response?.data || error.message);
+        throw error;
+    }
+};
+
+// Thu hồi (xóa hoàn toàn cả 2 bên)
+export const recallContact = async (id) => {
+    try {
+        const response = await api.delete(`/v1/contact/${id}/recall`);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi thu hồi liên hệ:", error.response?.data || error.message);
+        throw error;
+    }
+};
+

@@ -30,6 +30,27 @@ export const updateContact = async (id, payload) => {
     }
 };
 
+export const deleteContact = async (id) => {
+    try {
+        const response = await api.delete(`/v1/contact/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi xóa liên hệ:", error.response?.data || error.message);
+        throw error;
+    }
+};
+
+// Xóa chỉ phía admin (ẩn với admin nhưng user vẫn thấy)
+export const hideContactForAdmin = async (id) => {
+    try {
+        const response = await api.patch(`/v1/contact/${id}/hide-admin`);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi ẩn liên hệ:", error.response?.data || error.message);
+        throw error;
+    }
+};
+
 export const getMyContacts = async () => {
     try {
         const response = await api.get('/v1/contact/my-contacts');

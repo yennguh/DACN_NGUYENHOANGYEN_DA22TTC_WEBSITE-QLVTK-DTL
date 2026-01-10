@@ -16,7 +16,7 @@ const navItems = [
         subItems: [
             { name: 'Danh sách bài đăng', icon: <CircleHelp className="w-4 h-4" />, path: '/admin/lost-items' },
             { name: 'Đăng tin mới', icon: <PlusCircle className="w-4 h-4" />, path: '/admin/admin-posts/create' },
-            { name: 'Đã trả đồ', icon: <CheckCircle className="w-4 h-4" />, path: '/admin/returned-items' }
+            { name: 'Hoàn thành', icon: <CheckCircle className="w-4 h-4" />, path: '/admin/returned-items' }
         ]
     },
     {

@@ -12,29 +12,54 @@ export default function LostItemsList() {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [statusFilters, setStatusFilters] = useState(['approved']); // Mảng các status được chọn
     const [postTypeFilter, setPostTypeFilter] = useState('all'); // 'all', 'admin', 'user'
+
+    // Toggle status filter
+    const toggleStatusFilter = (status) => {
+        setStatusFilters(prev => {
+            if (prev.includes(status)) {
+                // Nếu đã có thì bỏ ra (nhưng phải còn ít nhất 1)
+                const newFilters = prev.filter(s => s !== status);
+                return newFilters.length > 0 ? newFilters : prev;
+            } else {
+                // Nếu chưa có thì thêm vào
+                return [...prev, status];
+            }
+        });
+    };
 
     // Lấy danh sách postId bị tố cáo (chưa xử lý)
     const reportedPostIds = reports.filter(r => r.status === 'pending' || r.status === 'reviewed').map(r => r.postId);
     
+    // Filter bài theo status được chọn
+    const filteredByStatus = posts.filter(p => {
+        // Pending luôn hiển thị riêng
+        if (p.status === 'pending') return true;
+        // Bài bị cấm luôn hiển thị riêng
+        if (p.banned) return true;
+        // Bài bị tố cáo luôn hiển thị riêng
+        if (reportedPostIds.includes(p._id)) return true;
+        // Filter theo status được chọn
+        return statusFilters.includes(p.status);
+    });
+    
     // Chia bài đăng theo category và trạng thái
-    const pendingPosts = posts.filter(p => p.status === 'pending');
-    const reportedPosts = posts.filter(p => reportedPostIds.includes(p._id) && !p.banned);
-    const bannedPosts = posts.filter(p => p.banned);
-    const sharedPosts = posts.filter(p => p.isShared && p.status !== 'pending' && p.returnStatus !== 'gửi trả' && !p.banned);
-    const lostPosts = posts.filter(p => p.category === 'lost' && !p.isShared && p.status !== 'pending' && p.returnStatus !== 'gửi trả' && !p.banned && !reportedPostIds.includes(p._id));
-    const foundPosts = posts.filter(p => p.category === 'found' && !p.isShared && p.status !== 'pending' && p.returnStatus !== 'gửi trả' && !p.banned && !reportedPostIds.includes(p._id));
-    const returnedPosts = posts.filter(p => p.returnStatus === 'gửi trả');
+    const pendingPosts = filteredByStatus.filter(p => p.status === 'pending');
+    const reportedPosts = filteredByStatus.filter(p => reportedPostIds.includes(p._id) && !p.banned && p.status !== 'pending');
+    const bannedPosts = filteredByStatus.filter(p => p.banned);
+    const sharedPosts = filteredByStatus.filter(p => p.isShared && p.status !== 'pending' && !p.banned && !reportedPostIds.includes(p._id));
+    const lostPosts = filteredByStatus.filter(p => p.category === 'lost' && !p.isShared && p.status !== 'pending' && !p.banned && !reportedPostIds.includes(p._id));
+    const foundPosts = filteredByStatus.filter(p => p.category === 'found' && !p.isShared && p.status !== 'pending' && !p.banned && !reportedPostIds.includes(p._id));
+    const completedPosts = filteredByStatus.filter(p => p.status === 'completed' && !p.banned && !reportedPostIds.includes(p._id));
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const params = {
                 page: 1,
-                limit: 100,
+                limit: 200,
                 includeBanned: true, // Lấy cả bài bị cấm
-                ...(statusFilter && { status: statusFilter }),
                 ...(searchTerm && { search: searchTerm })
             };
             const [postsResult, reportsResult] = await Promise.all([
@@ -65,7 +90,7 @@ export default function LostItemsList() {
     useEffect(() => {
         fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [statusFilter, searchTerm]);
+    }, [searchTerm]);
 
     const handleApprove = async (postId) => {
         try {
@@ -357,16 +382,41 @@ export default function LostItemsList() {
                             👤 User
                         </button>
                     </div>
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="pending">Chờ duyệt</option>
-                        <option value="approved">Đã duyệt</option>
-                        <option value="rejected">Từ chối</option>
-                    </select>
+                    
+                    {/* Filter theo trạng thái - có thể chọn nhiều */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => toggleStatusFilter('approved')}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                                statusFilters.includes('approved') 
+                                    ? 'bg-green-50 border-green-500 text-green-700' 
+                                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                            }`}
+                        >
+                            ✓ Đã duyệt
+                        </button>
+                        <button
+                            onClick={() => toggleStatusFilter('rejected')}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                                statusFilters.includes('rejected') 
+                                    ? 'bg-red-50 border-red-500 text-red-700' 
+                                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                            }`}
+                        >
+                            ✗ Từ chối
+                        </button>
+                        <button
+                            onClick={() => toggleStatusFilter('completed')}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border-2 ${
+                                statusFilters.includes('completed') 
+                                    ? 'bg-purple-50 border-purple-500 text-purple-700' 
+                                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                            }`}
+                        >
+                            ★ Hoàn thành
+                        </button>
+                    </div>
+                    
                     <div className="text-sm text-gray-600">
                         Tổng: <span className="font-bold text-blue-600">{posts.length}</span> bài đăng
                     </div>
@@ -438,14 +488,16 @@ export default function LostItemsList() {
                             headerColor="bg-gradient-to-r from-green-500 to-teal-500 text-white"
                         />
 
-                        {/* Bảng Đã trả đồ */}
-                        <PostTable 
-                            data={filterByPostType(returnedPosts)} 
-                            title="✅ Đã trả đồ" 
-                            icon={CheckCircle}
-                            headerColor="bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
-                            showReturnActions={false}
-                        />
+                        {/* Bảng Hoàn thành */}
+                        {filterByPostType(completedPosts).length > 0 && (
+                            <PostTable 
+                                data={filterByPostType(completedPosts)} 
+                                title="✅ Hoàn thành" 
+                                icon={CheckCircle}
+                                headerColor="bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
+                                showReturnActions={false}
+                            />
+                        )}
                     </>
                 )}
             </div>

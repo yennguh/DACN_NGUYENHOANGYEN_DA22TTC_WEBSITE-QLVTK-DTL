@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { fetchPosts, approvePost, rejectPost, deletePost, fetchTopPosters } from "../../api/posts.api";
 import { countPendingReports } from "../../api/reports.api";
+import { getImageUrl } from "../../utils/constant";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -53,6 +54,10 @@ export default function Dashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
+            // Fetch tất cả bài để thống kê chính xác
+            const allResult = await fetchPosts({ page: 1, limit: 1000 });
+            
+            // Fetch bài theo filter để hiển thị
             const params = {
                 page: 1,
                 limit: 100,
@@ -60,12 +65,15 @@ export default function Dashboard() {
                 ...(search && { search })
             };
             const result = await fetchPosts(params);
+            
             if (result && result.data) {
                 setPosts(result.data);
-                
-                // Calculate stats
-                const allPosts = result.data;
-                const total = result.pagination?.total || allPosts.length;
+            }
+            
+            // Calculate stats từ tất cả bài
+            if (allResult && allResult.data) {
+                const allPosts = allResult.data;
+                const total = allResult.pagination?.total || allPosts.length;
                 const approved = allPosts.filter(p => p.status === 'approved').length;
                 const pending = allPosts.filter(p => p.status === 'pending').length;
                 const completed = allPosts.filter(p => p.status === 'completed').length;
@@ -416,13 +424,15 @@ export default function Dashboard() {
                                 `}>
                                     {poster.user?.avatar ? (
                                         <img 
-                                            src={poster.user.avatar.startsWith('http') ? poster.user.avatar : `${process.env.REACT_APP_API_URL || 'http://localhost:8017'}${poster.user.avatar}`} 
+                                            src={getImageUrl(poster.user.avatar)} 
                                             alt="" 
                                             className="w-full h-full object-cover"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
                                         />
-                                    ) : (
-                                        poster.user?.fullname?.charAt(0)?.toUpperCase() || 'U'
-                                    )}
+                                    ) : null}
+                                    <span className={poster.user?.avatar ? 'hidden' : ''}>
+                                        {poster.user?.fullname?.charAt(0)?.toUpperCase() || 'U'}
+                                    </span>
                                 </div>
                                 <p className="font-semibold text-gray-800 truncate">{poster.user?.fullname || 'Ẩn danh'}</p>
                                 <p className="text-2xl font-bold text-blue-600">{poster.totalPosts}</p>
@@ -538,6 +548,19 @@ export default function Dashboard() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                            {(item.authorAvatar || item.user?.avatar) ? (
+                                                                <img 
+                                                                    src={getImageUrl(item.authorAvatar || item.user?.avatar)} 
+                                                                    alt="" 
+                                                                    className="w-full h-full object-cover"
+                                                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                                                />
+                                                            ) : null}
+                                                            <span className={(item.authorAvatar || item.user?.avatar) ? 'hidden' : 'text-white text-xs font-bold'}>
+                                                                {(item.authorFullname || item.user?.fullname || 'U').charAt(0).toUpperCase()}
+                                                            </span>
+                                                        </div>
                                                         <span className="text-gray-600">{item.authorFullname || item.user?.fullname || 'Ẩn danh'}</span>
                                                         {isAdminPost && (
                                                             <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-medium">👑 Admin</span>

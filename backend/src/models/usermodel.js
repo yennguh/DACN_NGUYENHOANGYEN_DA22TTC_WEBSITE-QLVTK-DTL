@@ -190,6 +190,52 @@ const UpdateUserGoogleId = async (id, googleId, avatar) => {
     }
 }
 
+// Chặn user khỏi tính năng liên hệ
+const BlockUserFromContact = async (userId) => {
+    try {
+        const result = await GET_DB()
+            .collection(User_COLLECTION_NAME)
+            .findOneAndUpdate(
+                { _id: new ObjectId(userId) },
+                { $set: { blockedFromContact: true, updateAt: Date.now() } },
+                { returnDocument: 'after', projection: { password: 0 } }
+            );
+        return result.value;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Bỏ chặn user
+const UnblockUserFromContact = async (userId) => {
+    try {
+        const result = await GET_DB()
+            .collection(User_COLLECTION_NAME)
+            .findOneAndUpdate(
+                { _id: new ObjectId(userId) },
+                { $set: { blockedFromContact: false, updateAt: Date.now() } },
+                { returnDocument: 'after', projection: { password: 0 } }
+            );
+        return result.value;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Lấy danh sách user bị chặn
+const GetBlockedUsers = async () => {
+    try {
+        const users = await GET_DB()
+            .collection(User_COLLECTION_NAME)
+            .find({ blockedFromContact: true })
+            .project({ password: 0 })
+            .toArray();
+        return users;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const USERMODEL = {
     CreatedUser,
     FindUserById,
@@ -199,5 +245,8 @@ export const USERMODEL = {
     DeleteUser,
     FindUserByEmail,
     CreatedUserGoogle,
-    UpdateUserGoogleId
+    UpdateUserGoogleId,
+    BlockUserFromContact,
+    UnblockUserFromContact,
+    GetBlockedUsers
 }

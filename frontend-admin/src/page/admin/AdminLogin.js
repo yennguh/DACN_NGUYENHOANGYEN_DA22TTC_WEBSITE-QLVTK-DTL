@@ -191,10 +191,9 @@ const AdminLogin = () => {
                     </form>
 
                     <div className="mt-8 text-center">
-                        <a href="http://localhost:3000/login" className="text-gray-500 hover:text-blue-600 text-sm transition-colors inline-flex items-center gap-2">
-                            <span>←</span>
-                            <span>Quay lại trang đăng nhập User</span>
-                        </a>
+                        <p className="text-gray-500 text-sm">
+                            Bạn là người dùng? Vui lòng truy cập trang User để đăng nhập.
+                        </p>
                     </div>
                 </div>
 

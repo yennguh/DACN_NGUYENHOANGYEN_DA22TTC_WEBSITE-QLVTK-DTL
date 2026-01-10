@@ -91,6 +91,33 @@ const UpdateUserGoogleId = async (id, googleId, avatar) => {
     }
 }
 
+const BlockUserFromContact = async (userId) => {
+    try {
+        const result = await USERMODEL.BlockUserFromContact(userId);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const UnblockUserFromContact = async (userId) => {
+    try {
+        const result = await USERMODEL.UnblockUserFromContact(userId);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
+const GetBlockedUsers = async () => {
+    try {
+        const result = await USERMODEL.GetBlockedUsers();
+        return result;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const userServices = {
     CreatedUser,
     GetUserInfor,
@@ -100,5 +127,8 @@ export const userServices = {
     DeleteUser,
     GetUserByEmail,
     CreatedUserGoogle,
-    UpdateUserGoogleId
+    UpdateUserGoogleId,
+    BlockUserFromContact,
+    UnblockUserFromContact,
+    GetBlockedUsers
 }

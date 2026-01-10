@@ -80,12 +80,28 @@ const getContactByUserId = async (userId) => {
     }
 };
 
+const deleteContact = async (id) => {
+    try {
+        const result = await CONTACTMODEL.deleteContact(id);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const contactServices = {
     createContact,
     getContacts,
     getContactById,
     updateContact,
     addReply,
-    getContactByUserId
+    getContactByUserId,
+    deleteContact,
+    markUserContactsBlocked: async (userId) => {
+        return await CONTACTMODEL.markUserContactsBlocked(userId);
+    },
+    unmarkUserContactsBlocked: async (userId) => {
+        return await CONTACTMODEL.unmarkUserContactsBlocked(userId);
+    }
 };
 

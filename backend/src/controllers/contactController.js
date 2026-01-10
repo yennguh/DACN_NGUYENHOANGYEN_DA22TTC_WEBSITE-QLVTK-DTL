@@ -7,10 +7,29 @@ const createContact = async (req, res, next) => {
     try {
         // Optional: check if user is authenticated (middleware isAuth is optional)
         const decoded = req.jwtDecoded || null;
+        
+        // Đảm bảo userId được lưu dưới dạng string
+        let userId = null;
+        if (decoded?._id) {
+            userId = typeof decoded._id === 'string' ? decoded._id : decoded._id.toString();
+            
+            // Kiểm tra user có bị chặn không
+            const userInfo = await userServices.GetUserInfor(userId);
+            if (userInfo && userInfo.blockedFromContact === true) {
+                return res.status(StatusCodes.FORBIDDEN).json({ 
+                    message: 'Tài khoản của bạn đã bị chặn khỏi tính năng liên hệ. Vui lòng liên hệ admin để được hỗ trợ.',
+                    blocked: true
+                });
+            }
+        }
+        
         const payload = {
             ...req.body,
-            userId: decoded?._id || null
+            userId: userId
         };
+        
+        console.log('Creating contact with userId:', userId); // Debug log
+        
         const result = await contactServices.createContact(payload);
         res.status(StatusCodes.CREATED).json({
             message: 'Contact message sent successfully',
@@ -30,7 +49,9 @@ const getContacts = async (req, res, next) => {
         }
 
         const params = req.query;
-        const result = await contactServices.getContacts(params);
+        // Thêm param includeBlocked để lấy tin nhắn của user bị chặn
+        const includeBlocked = params.includeBlocked === 'true';
+        const result = await contactServices.getContacts({ ...params, includeBlocked });
         res.status(StatusCodes.OK).json(result);
     } catch (error) {
         next(error);
@@ -144,11 +165,111 @@ const getMyContacts = async (req, res, next) => {
     }
 };
 
+// Xóa hoàn toàn tin nhắn (admin only)
+const deleteContact = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded.roles?.includes('admin')) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'Only admin can delete contacts' });
+        }
+
+        const { id } = req.params;
+        await contactServices.deleteContact(id);
+        res.status(StatusCodes.OK).json({
+            message: 'Contact deleted successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Ẩn tin nhắn chỉ phía admin (user vẫn thấy)
+const hideForAdmin = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded.roles?.includes('admin')) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'Only admin can hide contacts' });
+        }
+
+        const { id } = req.params;
+        const result = await contactServices.updateContact(id, { hiddenForAdmin: true });
+        res.status(StatusCodes.OK).json({
+            message: 'Contact hidden for admin',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Ẩn tin nhắn chỉ phía user (admin vẫn thấy)
+const hideForUser = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded._id) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
+        }
+
+        const { id } = req.params;
+        // Kiểm tra xem contact có thuộc về user này không
+        const contact = await contactServices.getContactById(id);
+        if (!contact) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Contact not found' });
+        }
+        
+        const userId = typeof decoded._id === 'string' ? decoded._id : decoded._id.toString();
+        if (contact.userId !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'You can only hide your own contacts' });
+        }
+
+        const result = await contactServices.updateContact(id, { hiddenForUser: true });
+        res.status(StatusCodes.OK).json({
+            message: 'Contact hidden for user',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Thu hồi tin nhắn (user xóa cả 2 bên - chỉ với tin nhắn của mình)
+const recallContact = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded._id) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
+        }
+
+        const { id } = req.params;
+        // Kiểm tra xem contact có thuộc về user này không
+        const contact = await contactServices.getContactById(id);
+        if (!contact) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Contact not found' });
+        }
+        
+        const userId = typeof decoded._id === 'string' ? decoded._id : decoded._id.toString();
+        if (contact.userId !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'You can only recall your own contacts' });
+        }
+
+        await contactServices.deleteContact(id);
+        res.status(StatusCodes.OK).json({
+            message: 'Contact recalled successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const contactController = {
     createContact,
     getContacts,
     updateContact,
     addReply,
-    getMyContacts
+    getMyContacts,
+    deleteContact,
+    hideForAdmin,
+    hideForUser,
+    recallContact
 };
 

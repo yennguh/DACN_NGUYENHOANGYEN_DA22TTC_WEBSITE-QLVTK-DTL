@@ -21,4 +21,23 @@ let isAuth = async (req, res, next) => {
   }
 }
 
-export { isAuth };
+// Optional auth - lấy user info nếu có token, không bắt buộc
+let optionalAuth = async (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // "Bearer <token>"
+  if (!token) {
+    req.jwtDecoded = null;
+    return next();
+  }
+  try {
+    const decoded = await jwtHelper.verifyToken(token, accessTokenSecret);
+    req.jwtDecoded = decoded;
+    return next();
+  } catch (error) {
+    // Token không hợp lệ nhưng vẫn cho phép tiếp tục
+    req.jwtDecoded = null;
+    return next();
+  }
+}
+
+export { isAuth, optionalAuth };

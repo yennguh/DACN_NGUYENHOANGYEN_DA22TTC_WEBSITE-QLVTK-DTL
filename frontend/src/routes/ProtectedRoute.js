@@ -1,9 +1,9 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import { useContext } from "react";
 import { AuthContext } from "../core/AuthContext";
 
-export default function ProtectedRoute({ roles }) {
+// ProtectedRoute cho user thường - chỉ yêu cầu đăng nhập
+export default function ProtectedRoute() {
     const { token, loadingUser } = useContext(AuthContext);
     const location = useLocation();
 
@@ -20,23 +20,9 @@ export default function ProtectedRoute({ roles }) {
     }
 
     if (!token) {
-        // Redirect về admin login và lưu lại trang hiện tại
-        return <Navigate to="/admin/login" state={{ from: location }} replace />;
+        // Redirect về login và lưu lại trang hiện tại
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    try {
-        const decoded = jwtDecode(token);
-        const userRole = decoded.roles || decoded.role || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-        
-        const isAdmin = userRole && (Array.isArray(userRole) ? userRole.includes("admin") : userRole === "admin");
-        
-        if (!isAdmin) {
-            return <Navigate to="/" replace />;
-        }
-
-        return <Outlet />;
-    } catch (error) {
-        console.error("Token invalid:", error);
-        return <Navigate to="/admin/login" replace />;
-    }
+    return <Outlet />;
 }

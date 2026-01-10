@@ -69,14 +69,27 @@ const createContact = async (payload) => {
     }
 };
 
-const findContacts = async ({ page = 1, limit = 10, sortBy = 'createdAt', sortOrder = -1, status }) => {
+const findContacts = async ({ page = 1, limit = 10, sortBy = 'createdAt', sortOrder = -1, status, includeBlocked = false }) => {
     try {
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
         const skip = (pageNum - 1) * limitNum;
+        
+        // Đảm bảo includeBlocked là boolean
+        const isBlocked = includeBlocked === true || includeBlocked === 'true';
 
-        const filter = {};
+        const filter = {
+            hiddenForAdmin: { $ne: true } // Không lấy tin đã ẩn với admin
+        };
         if (status) filter.status = status;
+        
+        // Nếu isBlocked = true thì lấy tin của user bị chặn
+        // Nếu isBlocked = false thì chỉ lấy tin của user chưa bị chặn
+        if (isBlocked) {
+            filter.userBlocked = true;
+        } else {
+            filter.userBlocked = { $ne: true };
+        }
 
         const totalCount = await GET_DB().collection(CONTACT_COLLECTION_NAME).countDocuments(filter);
 
@@ -156,12 +169,75 @@ const addReply = async (contactId, replyData) => {
 
 const getContactByUserId = async (userId) => {
     try {
+        // Normalize userId để so sánh
+        const normalizedUserId = normalizeUserId(userId);
+        
+        if (!normalizedUserId) {
+            return [];
+        }
+
+        // Tìm theo cả string và có thể ObjectId, không lấy những tin đã ẩn với user
         const contacts = await GET_DB()
             .collection(CONTACT_COLLECTION_NAME)
-            .find({ userId: userId })
+            .find({ 
+                $and: [
+                    { $or: [
+                        { userId: normalizedUserId },
+                        { userId: userId }
+                    ]},
+                    { hiddenForUser: { $ne: true } } // Không lấy tin đã ẩn với user
+                ]
+            })
             .sort({ createdAt: -1 })
             .toArray();
         return contacts;
+    } catch (error) {
+        throw error;
+    }
+};
+
+const deleteContact = async (id) => {
+    try {
+        const result = await GET_DB()
+            .collection(CONTACT_COLLECTION_NAME)
+            .deleteOne({ _id: new ObjectId(id) });
+        return result;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Đánh dấu tất cả tin nhắn của user là bị chặn
+const markUserContactsBlocked = async (userId) => {
+    try {
+        const normalizedUserId = normalizeUserId(userId);
+        if (!normalizedUserId) return { modifiedCount: 0 };
+        
+        const result = await GET_DB()
+            .collection(CONTACT_COLLECTION_NAME)
+            .updateMany(
+                { $or: [{ userId: normalizedUserId }, { userId: userId }] },
+                { $set: { userBlocked: true, updatedAt: Date.now() } }
+            );
+        return result;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Bỏ đánh dấu chặn cho tất cả tin nhắn của user
+const unmarkUserContactsBlocked = async (userId) => {
+    try {
+        const normalizedUserId = normalizeUserId(userId);
+        if (!normalizedUserId) return { modifiedCount: 0 };
+        
+        const result = await GET_DB()
+            .collection(CONTACT_COLLECTION_NAME)
+            .updateMany(
+                { $or: [{ userId: normalizedUserId }, { userId: userId }] },
+                { $set: { userBlocked: false, updatedAt: Date.now() } }
+            );
+        return result;
     } catch (error) {
         throw error;
     }
@@ -173,6 +249,8 @@ export const CONTACTMODEL = {
     findContactById,
     updateContact,
     addReply,
-    getContactByUserId
+    getContactByUserId,
+    deleteContact,
+    markUserContactsBlocked,
+    unmarkUserContactsBlocked
 };
-

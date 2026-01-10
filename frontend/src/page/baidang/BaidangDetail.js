@@ -117,7 +117,9 @@ const BaidangDetail = () => {
             setEditItemType(post.itemType || '');
             setEditLocation(post.location || '');
             setEditCategory(post.category || '');
-            setReturnStatus(post.returnStatus || false);
+            // returnStatus có thể là true/false hoặc 'gửi trả'/'chưa tìm thấy'
+            const isReturned = post.returnStatus === true || post.returnStatus === 'gửi trả';
+            setReturnStatus(isReturned);
         }
     }, [post]);
 
@@ -150,12 +152,25 @@ const BaidangDetail = () => {
     };
 
     const handleToggleReturnStatus = async () => {
-        if (!isOwner) return;
+        if (!isOwner && !isAdmin) return;
         try {
-            const newStatus = !returnStatus;
-            await updatePost(id, { returnStatus: newStatus });
-            setReturnStatus(newStatus);
-            setPost(prev => ({ ...prev, returnStatus: newStatus }));
+            const newReturnStatus = !returnStatus;
+            // Gửi giá trị string cho backend
+            const returnStatusValue = newReturnStatus ? 'gửi trả' : 'chưa tìm thấy';
+            // Khi tick "Đã tìm được/Đã trả lại" thì status = completed
+            // Khi bỏ tick thì status = approved
+            const newStatus = newReturnStatus ? 'completed' : 'approved';
+            
+            await updatePost(id, { 
+                returnStatus: returnStatusValue,
+                status: newStatus
+            });
+            setReturnStatus(newReturnStatus);
+            setPost(prev => ({ 
+                ...prev, 
+                returnStatus: returnStatusValue,
+                status: newStatus
+            }));
         } catch (err) { alert('Có lỗi xảy ra'); }
     };
 
@@ -186,7 +201,7 @@ const BaidangDetail = () => {
         try {
             await deletePost(id);
             alert('Xóa thành công');
-            navigate(isAdmin ? '/admin' : '/');
+            navigate('/');
         } catch (error) { alert('Có lỗi xảy ra'); }
     };
 
@@ -352,7 +367,6 @@ const BaidangDetail = () => {
                                 <button onClick={handleCancelEditPost} className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">Hủy</button>
                             </>
                         )}
-                        {isAdmin && !isOwner && !post?.isShared && <Link to={`/admin/posts/${id}/edit`} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"><Edit className="w-4 h-4" /> Chỉnh sửa (Admin)</Link>}
                         <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"><Trash2 className="w-4 h-4" /> Xóa</button>
                     </div>
                 )}

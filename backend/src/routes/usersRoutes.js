@@ -29,11 +29,19 @@ Router.post('/refresh-token', userController.refreshToken)
 Router.get('/list', isAuth, userController.ListUsers)
 Router.put('/updateUser', isAuth, uploadProfile, handleUploadError, userController.UpdateUser)
 Router.put('/change-password', isAuth, userController.ChangePassword)
-Router.get('/:id', userController.GetUserById)
-Router.delete('/:id', isAuth, userController.DeleteUser)
 
 // Forgot password routes
 Router.post('/verify-reset', userController.VerifyReset)
 Router.post('/reset-password', userController.ResetPassword)
+
+// Block/Unblock user from contact (Admin only) - phải đặt TRƯỚC /:id
+Router.get('/blocked-contacts/list', isAuth, userController.GetBlockedUsers)
+Router.get('/check-blocked/status', isAuth, userController.CheckUserBlocked)
+Router.patch('/:id/block-contact', isAuth, userController.BlockUserFromContact)
+Router.patch('/:id/unblock-contact', isAuth, userController.UnblockUserFromContact)
+
+// Routes với :id phải đặt cuối cùng
+Router.get('/:id', userController.GetUserById)
+Router.delete('/:id', isAuth, userController.DeleteUser)
 
 export default Router

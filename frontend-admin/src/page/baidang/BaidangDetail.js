@@ -117,7 +117,9 @@ const BaidangDetail = () => {
             setEditItemType(post.itemType || '');
             setEditLocation(post.location || '');
             setEditCategory(post.category || '');
-            setReturnStatus(post.returnStatus || false);
+            // returnStatus có thể là true/false hoặc 'gửi trả'/'chưa tìm thấy'
+            const isReturned = post.returnStatus === true || post.returnStatus === 'gửi trả';
+            setReturnStatus(isReturned);
         }
     }, [post]);
 
@@ -150,12 +152,24 @@ const BaidangDetail = () => {
     };
 
     const handleToggleReturnStatus = async () => {
-        if (!isOwner) return;
+        if (!isOwner && !isAdmin) return;
         try {
-            const newStatus = !returnStatus;
-            await updatePost(id, { returnStatus: newStatus });
-            setReturnStatus(newStatus);
-            setPost(prev => ({ ...prev, returnStatus: newStatus }));
+            const newReturnStatus = !returnStatus;
+            // Gửi giá trị string cho backend
+            const returnStatusValue = newReturnStatus ? 'gửi trả' : 'chưa tìm thấy';
+            // Khi tick "Đã tìm được/Đã trả lại" thì status = completed
+            const newStatus = newReturnStatus ? 'completed' : 'approved';
+            
+            await updatePost(id, { 
+                returnStatus: returnStatusValue,
+                status: newStatus
+            });
+            setReturnStatus(newReturnStatus);
+            setPost(prev => ({ 
+                ...prev, 
+                returnStatus: returnStatusValue,
+                status: newStatus
+            }));
         } catch (err) { alert('Có lỗi xảy ra'); }
     };
 

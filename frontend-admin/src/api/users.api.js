@@ -108,3 +108,36 @@ export const getUserById = async (userId) => {
       return null;
    }
 };
+
+// Block user from contact feature (Admin only)
+export const blockUserFromContact = async (userId) => {
+   try {
+      const response = await api.patch(`/v1/user/${userId}/block-contact`);
+      return response.data;
+   } catch (error) {
+      console.error("Lỗi chặn người dùng:", error.response?.data || error.message);
+      throw error;
+   }
+};
+
+// Unblock user from contact feature (Admin only)
+export const unblockUserFromContact = async (userId) => {
+   try {
+      const response = await api.patch(`/v1/user/${userId}/unblock-contact`);
+      return response.data;
+   } catch (error) {
+      console.error("Lỗi bỏ chặn người dùng:", error.response?.data || error.message);
+      throw error;
+   }
+};
+
+// Get list of blocked users (Admin only)
+export const getBlockedUsers = async () => {
+   try {
+      const response = await api.get('/v1/user/blocked-contacts/list');
+      return response.data;
+   } catch (error) {
+      console.error("Lỗi lấy danh sách người dùng bị chặn:", error.response?.data || error.message);
+      return null;
+   }
+};

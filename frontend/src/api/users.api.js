@@ -108,3 +108,14 @@ export const getUserById = async (userId) => {
       return null;
    }
 };
+
+// Kiểm tra user có bị chặn khỏi tính năng liên hệ không
+export const checkUserBlocked = async () => {
+   try {
+      const response = await api.get('/v1/user/check-blocked/status');
+      return response.data;
+   } catch (error) {
+      console.error("Lỗi kiểm tra trạng thái chặn:", error.response?.data || error.message);
+      return { blocked: false };
+   }
+};

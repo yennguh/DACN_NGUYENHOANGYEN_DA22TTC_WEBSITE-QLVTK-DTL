@@ -141,6 +141,23 @@ const updatePost = async (req, res, next) => {
             }
         }
 
+        // Xử lý logic returnStatus và status
+        // returnStatus có thể là true/false hoặc 'gửi trả'/'chưa tìm thấy'
+        if (updatePayload.returnStatus !== undefined) {
+            const isReturned = updatePayload.returnStatus === true || updatePayload.returnStatus === 'gửi trả';
+            // Chuẩn hóa returnStatus thành string
+            updatePayload.returnStatus = isReturned ? 'gửi trả' : 'chưa tìm thấy';
+            // Tự động cập nhật status
+            if (!updatePayload.status) {
+                updatePayload.status = isReturned ? 'completed' : 'approved';
+            }
+        }
+        
+        // User thường không được thay đổi status trực tiếp (trừ khi liên quan đến returnStatus)
+        if (!isAdmin && updatePayload.status && updatePayload.returnStatus === undefined) {
+            delete updatePayload.status; // Xóa nếu user cố tình đổi status mà không qua returnStatus
+        }
+
         const result = await postServices.updatePost(id, updatePayload);
         res.status(StatusCodes.OK).json({
             message: 'Post updated successfully',
@@ -392,7 +409,10 @@ const updateReturnStatus = async (req, res, next) => {
             return res.status(StatusCodes.NOT_FOUND).json({ message: 'Post not found' });
         }
 
-        const result = await postServices.updatePost(id, { returnStatus });
+        // Khi đánh dấu "gửi trả" thì status = completed
+        // Khi đánh dấu "chưa tìm thấy" thì status = approved
+        const newStatus = returnStatus === 'gửi trả' ? 'completed' : 'approved';
+        const result = await postServices.updatePost(id, { returnStatus, status: newStatus });
 
         // Gửi thông báo cho người đăng
         if (post.userId && post.userId !== decoded._id) {

@@ -477,6 +477,106 @@ const ChangePassword = async (req, res, next) => {
     }
 }
 
+// Chặn user khỏi tính năng liên hệ (Admin only)
+const BlockUserFromContact = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded.roles?.includes('admin')) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'Chỉ admin mới có quyền chặn người dùng' });
+        }
+
+        const { id } = req.params;
+        if (!id) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Yêu cầu ID người dùng' });
+        }
+
+        const result = await userServices.BlockUserFromContact(id);
+        if (!result) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Không tìm thấy người dùng' });
+        }
+
+        // Đánh dấu tất cả tin nhắn của user này là bị chặn
+        const { contactServices } = await import('../services/contactServices.js');
+        await contactServices.markUserContactsBlocked(id);
+
+        return res.status(StatusCodes.OK).json({
+            message: 'Đã chặn người dùng khỏi tính năng liên hệ',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// Bỏ chặn user (Admin only)
+const UnblockUserFromContact = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded.roles?.includes('admin')) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'Chỉ admin mới có quyền bỏ chặn người dùng' });
+        }
+
+        const { id } = req.params;
+        if (!id) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Yêu cầu ID người dùng' });
+        }
+
+        const result = await userServices.UnblockUserFromContact(id);
+        if (!result) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Không tìm thấy người dùng' });
+        }
+
+        // Bỏ đánh dấu chặn cho tất cả tin nhắn của user này
+        const { contactServices } = await import('../services/contactServices.js');
+        await contactServices.unmarkUserContactsBlocked(id);
+
+        return res.status(StatusCodes.OK).json({
+            message: 'Đã bỏ chặn người dùng',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// Lấy danh sách user bị chặn (Admin only)
+const GetBlockedUsers = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded.roles?.includes('admin')) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'Chỉ admin mới có quyền xem danh sách này' });
+        }
+
+        const result = await userServices.GetBlockedUsers();
+        return res.status(StatusCodes.OK).json({
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+// Kiểm tra user có bị chặn không
+const CheckUserBlocked = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded._id) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
+        }
+
+        const user = await userServices.GetUserInfor(decoded._id);
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Không tìm thấy người dùng' });
+        }
+
+        return res.status(StatusCodes.OK).json({
+            blocked: user.blockedFromContact === true
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export const userController = {
     CreatedUser,
     Login,
@@ -489,5 +589,9 @@ export const userController = {
     ChangePassword,
     GetUserById,
     VerifyReset,
-    ResetPassword
+    ResetPassword,
+    BlockUserFromContact,
+    UnblockUserFromContact,
+    GetBlockedUsers,
+    CheckUserBlocked
 }

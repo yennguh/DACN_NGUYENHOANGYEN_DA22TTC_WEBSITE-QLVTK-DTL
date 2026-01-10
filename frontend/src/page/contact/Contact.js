@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
     MessageSquare, 
@@ -15,11 +15,13 @@ import {
     ArrowLeft,
     RefreshCw,
     Image,
-    X
+    X,
+    Trash2,
+    EyeOff
 } from 'lucide-react';
-import { sendContact, fetchContacts, addReply } from '../../api/contact.api';
+import { sendContact, getMyContacts, addReply, hideContactForUser, recallContact } from '../../api/contact.api';
 import { AuthContext } from '../../core/AuthContext';
-import { inforUser } from '../../api/users.api';
+import { inforUser, checkUserBlocked } from '../../api/users.api';
 import { getImageUrl } from '../../utils/constant';
 
 const Contact = () => {
@@ -38,6 +40,9 @@ const Contact = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const imageInputRef = useRef(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [contactToDelete, setContactToDelete] = useState(null);
+    const [isBlocked, setIsBlocked] = useState(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,6 +52,7 @@ const Contact = () => {
         if (token) {
             fetchUserInfo();
             fetchData();
+            checkBlockedStatus();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
@@ -54,6 +60,15 @@ const Contact = () => {
     useEffect(() => {
         scrollToBottom();
     }, [selectedContact]);
+
+    const checkBlockedStatus = async () => {
+        try {
+            const result = await checkUserBlocked();
+            setIsBlocked(result?.blocked === true);
+        } catch (error) {
+            console.error('Error checking blocked status:', error);
+        }
+    };
 
     const fetchUserInfo = async () => {
         try {
@@ -75,22 +90,17 @@ const Contact = () => {
         if (!token) return;
         setLoading(true);
         try {
-            const params = { page: 1, limit: 100 };
-            const result = await fetchContacts(params);
+            const result = await getMyContacts();
             
             if (result && result.data) {
-                const userEmail = userInfo?.email || user?.email;
-                const filtered = result.data.filter(contact => contact.email === userEmail);
-                setMyContacts(filtered);
-                if (!selectedContact && filtered.length > 0) {
-                    setSelectedContact(filtered[0]);
+                setMyContacts(result.data);
+                if (!selectedContact && result.data.length > 0) {
+                    setSelectedContact(result.data[0]);
                 }
             } else if (result && Array.isArray(result)) {
-                const userEmail = userInfo?.email || user?.email;
-                const filtered = result.filter(contact => contact.email === userEmail);
-                setMyContacts(filtered);
-                if (!selectedContact && filtered.length > 0) {
-                    setSelectedContact(filtered[0]);
+                setMyContacts(result);
+                if (!selectedContact && result.length > 0) {
+                    setSelectedContact(result[0]);
                 }
             } else {
                 setMyContacts([]);
@@ -106,6 +116,12 @@ const Contact = () => {
     const handleSendNewMessage = async (e) => {
         e.preventDefault();
         if (!newMessage.subject.trim() || !newMessage.message.trim()) return;
+
+        // Kiểm tra user bị chặn
+        if (isBlocked) {
+            alert('Tài khoản của bạn đã bị chặn khỏi tính năng liên hệ. Vui lòng liên hệ admin để được hỗ trợ.');
+            return;
+        }
 
         setSending(true);
         try {
@@ -138,6 +154,9 @@ const Contact = () => {
             setTimeout(() => fetchData(), 500);
         } catch (error) {
             console.error('Error sending contact:', error);
+            if (error.response?.data?.blocked) {
+                setIsBlocked(true);
+            }
             alert(error.response?.data?.message || 'Có lỗi xảy ra khi gửi tin nhắn');
         } finally {
             setSending(false);
@@ -172,6 +191,12 @@ const Contact = () => {
         e.preventDefault();
         if ((!replyMessage.trim() && !selectedImage) || !selectedContact) return;
 
+        // Kiểm tra user bị chặn
+        if (isBlocked) {
+            alert('Tài khoản của bạn đã bị chặn khỏi tính năng liên hệ. Vui lòng liên hệ admin để được hỗ trợ.');
+            return;
+        }
+
         setSending(true);
         const replyText = replyMessage.trim();
         const imageFile = selectedImage;
@@ -198,26 +223,25 @@ const Contact = () => {
         
         try {
             await addReply(selectedContact._id, replyText, imageFile);
-            setTimeout(() => {
-                fetchData();
-                const userEmail = userInfo?.email || user?.email;
-                fetchContacts({ page: 1, limit: 100 }).then(result => {
+            setTimeout(async () => {
+                try {
+                    const result = await getMyContacts();
                     if (result && result.data) {
-                        const filtered = result.data.filter(c => c.email === userEmail);
-                        const updated = filtered.find(c => c._id === selectedContact._id);
+                        setMyContacts(result.data);
+                        const updated = result.data.find(c => c._id === selectedContact._id);
                         if (updated) {
-                            setMyContacts(filtered);
                             setSelectedContact(updated);
                         }
                     } else if (result && Array.isArray(result)) {
-                        const filtered = result.filter(c => c.email === userEmail);
-                        const updated = filtered.find(c => c._id === selectedContact._id);
+                        setMyContacts(result);
+                        const updated = result.find(c => c._id === selectedContact._id);
                         if (updated) {
-                            setMyContacts(filtered);
                             setSelectedContact(updated);
                         }
                     }
-                });
+                } catch (err) {
+                    console.error('Error refreshing contacts:', err);
+                }
             }, 500);
         } catch (error) {
             console.error('Error sending reply:', error);
@@ -226,6 +250,9 @@ const Contact = () => {
                 contact._id === selectedContact._id ? selectedContact : contact
             ));
             setReplyMessage(replyText);
+            if (error.response?.data?.blocked) {
+                setIsBlocked(true);
+            }
             alert(error.response?.data?.message || 'Có lỗi xảy ra khi gửi phản hồi');
         } finally {
             setSending(false);
@@ -277,6 +304,44 @@ const Contact = () => {
                 return { text: 'Đã xem', className: 'bg-blue-100 text-blue-600', icon: CheckCircle2 };
             default:
                 return { text: 'Mới', className: 'bg-yellow-100 text-yellow-600', icon: Circle };
+        }
+    };
+
+    // Mở modal xóa
+    const openDeleteModal = (contact) => {
+        setContactToDelete(contact);
+        setShowDeleteModal(true);
+    };
+
+    // Xóa 1 bên (ẩn với user)
+    const handleHideForUser = async () => {
+        if (!contactToDelete) return;
+        try {
+            await hideContactForUser(contactToDelete._id);
+            setShowDeleteModal(false);
+            setContactToDelete(null);
+            if (selectedContact?._id === contactToDelete._id) {
+                setSelectedContact(null);
+            }
+            await fetchData();
+        } catch (error) {
+            alert('Có lỗi xảy ra');
+        }
+    };
+
+    // Thu hồi (xóa cả 2 bên)
+    const handleRecallContact = async () => {
+        if (!contactToDelete) return;
+        try {
+            await recallContact(contactToDelete._id);
+            setShowDeleteModal(false);
+            setContactToDelete(null);
+            if (selectedContact?._id === contactToDelete._id) {
+                setSelectedContact(null);
+            }
+            await fetchData();
+        } catch (error) {
+            alert('Có lỗi xảy ra');
         }
     };
 
@@ -372,6 +437,12 @@ const Contact = () => {
                             {/* New Message Form */}
                             {showNewMessageForm && (
                                 <div className="p-4 border-b bg-gradient-to-br from-blue-50 to-purple-50">
+                                    {isBlocked ? (
+                                        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-center">
+                                            <div className="text-red-600 font-medium mb-1">⚠️ Tài khoản bị chặn</div>
+                                            <p className="text-sm text-red-500">Bạn không thể gửi tin nhắn. Vui lòng liên hệ admin để được hỗ trợ.</p>
+                                        </div>
+                                    ) : (
                                     <form onSubmit={handleSendNewMessage} className="space-y-3">
                                         <input
                                             type="text"
@@ -409,6 +480,7 @@ const Contact = () => {
                                             </button>
                                         </div>
                                     </form>
+                                    )}
                                 </div>
                             )}
 
@@ -497,6 +569,13 @@ const Contact = () => {
                                                 <h3 className="font-bold text-gray-800">{selectedContact.subject}</h3>
                                                 <p className="text-sm text-gray-500">Admin sẽ phản hồi sớm nhất có thể</p>
                                             </div>
+                                            <button
+                                                onClick={() => openDeleteModal(selectedContact)}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                                                title="Xóa tin nhắn"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
                                         </div>
                                     </div>
 
@@ -600,6 +679,14 @@ const Contact = () => {
 
                                     {/* Input */}
                                     <div className="p-4 bg-white border-t">
+                                        {/* Thông báo bị chặn */}
+                                        {isBlocked ? (
+                                            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-center">
+                                                <div className="text-red-600 font-medium mb-1">⚠️ Tài khoản bị chặn</div>
+                                                <p className="text-sm text-red-500">Bạn không thể gửi tin nhắn. Vui lòng liên hệ admin để được hỗ trợ.</p>
+                                            </div>
+                                        ) : (
+                                        <>
                                         {/* Image Preview */}
                                         {imagePreview && (
                                             <div className="mb-3 relative inline-block">
@@ -649,6 +736,8 @@ const Contact = () => {
                                                 <Send className="w-5 h-5" />
                                             </button>
                                         </form>
+                                        </>
+                                        )}
                                     </div>
                                 </>
                             ) : (
@@ -666,6 +755,58 @@ const Contact = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal xóa tin nhắn */}
+            {showDeleteModal && contactToDelete && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-gray-800">Xóa tin nhắn</h3>
+                            <button 
+                                onClick={() => { setShowDeleteModal(false); setContactToDelete(null); }}
+                                className="p-1 hover:bg-gray-100 rounded-full"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        
+                        <p className="text-gray-600 mb-6">
+                            Bạn muốn xóa tin nhắn "<span className="font-semibold">{contactToDelete.subject}</span>" như thế nào?
+                        </p>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleHideForUser}
+                                className="w-full flex items-center gap-3 px-4 py-3 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-xl hover:bg-yellow-100 transition-colors"
+                            >
+                                <EyeOff className="w-5 h-5" />
+                                <div className="text-left">
+                                    <div className="font-semibold">Xóa 1 bên (Ẩn)</div>
+                                    <div className="text-sm text-yellow-600">Chỉ ẩn với bạn, Admin vẫn thấy</div>
+                                </div>
+                            </button>
+                            
+                            <button
+                                onClick={handleRecallContact}
+                                className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-xl hover:bg-red-100 transition-colors"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                                <div className="text-left">
+                                    <div className="font-semibold">Thu hồi (Xóa hoàn toàn)</div>
+                                    <div className="text-sm text-red-600">Xóa cả 2 bên, không ai thấy nữa</div>
+                                </div>
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => { setShowDeleteModal(false); setContactToDelete(null); }}
+                            className="w-full mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                        >
+                            Hủy
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
