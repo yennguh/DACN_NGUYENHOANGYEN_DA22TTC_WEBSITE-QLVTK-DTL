@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Loader2, Shield } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { fetchLoginAPI } from "../../api/users.api";
-import Cookies from 'js-cookie';
 import { AuthContext } from "../../core/AuthContext";
 import { jwtDecode } from "jwt-decode";
 
@@ -46,7 +45,7 @@ const AdminLogin = () => {
         }
     }, []);
 
-    const handleLoginSuccess = useCallback((accessToken, refreshToken, email = null, password = null) => {
+    const handleLoginSuccess = useCallback(async (accessToken, refreshToken, email = null, password = null) => {
         let userRole = null;
         try {
             const decoded = jwtDecode(accessToken);
@@ -69,13 +68,10 @@ const AdminLogin = () => {
             localStorage.removeItem('adminSavedCredentials');
         }
 
-        login(accessToken, refreshToken);
-        Cookies.set("accessToken", accessToken, { expires: 7 });
-        if (refreshToken) Cookies.set("refreshToken", refreshToken, { expires: 30 });
-        localStorage.setItem("token", accessToken);
-        window.dispatchEvent(new Event('userLogin'));
+        // Chỉ gọi login, không set cookie riêng nữa
+        await login(accessToken, refreshToken);
         
-        const from = location.state?.from?.pathname || '/';
+        const from = location.state?.from?.pathname || '/admin';
         navigate(from, { replace: true });
     }, [login, navigate, location.state, rememberMe]);
 

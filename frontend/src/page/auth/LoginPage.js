@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Loader2, CheckCircle, ExternalLink } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { fetchLoginAPI } from "../../api/users.api";
-import Cookies from 'js-cookie';
 import { AuthContext } from "../../core/AuthContext";
 import { jwtDecode } from "jwt-decode";
 
@@ -51,26 +50,19 @@ const LoginPage = () => {
         }
     }, []);
 
-    const handleLoginSuccess = useCallback((accessToken, refreshToken, email = null, password = null) => {
+    const handleLoginSuccess = useCallback(async (accessToken, refreshToken, email = null, password = null) => {
         // Lưu hoặc xóa thông tin đăng nhập dựa vào rememberMe
         if (rememberMe && email && password) {
-            // Mã hóa đơn giản để không lưu plain text (không phải bảo mật cao, chỉ để tránh nhìn thấy trực tiếp)
             localStorage.setItem('savedCredentials', JSON.stringify({
                 email: email,
-                password: btoa(password) // encode base64
+                password: btoa(password)
             }));
         } else if (!rememberMe) {
             localStorage.removeItem('savedCredentials');
         }
         
-        // Thời gian hết hạn cookie dựa vào rememberMe
-        const cookieExpires = rememberMe ? 30 : 7;
-        
-        login(accessToken, refreshToken);
-        Cookies.set("accessToken", accessToken, { expires: cookieExpires });
-        if (refreshToken) Cookies.set("refreshToken", refreshToken, { expires: cookieExpires });
-        localStorage.setItem("token", accessToken);
-        window.dispatchEvent(new Event('userLogin'));
+        // Chỉ gọi login, không set cookie riêng nữa
+        await login(accessToken, refreshToken);
         
         const from = location.state?.from?.pathname || '/';
         navigate(from, { replace: true });

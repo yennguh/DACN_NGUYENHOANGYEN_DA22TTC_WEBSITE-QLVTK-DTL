@@ -199,7 +199,10 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 hover:shadow-xl transition-all">
+                <div 
+                    onClick={() => navigate('/admin/returned-items')}
+                    className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 hover:shadow-xl transition-all cursor-pointer hover:border-purple-300"
+                >
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                             <TrendingUp className="w-6 h-6 text-purple-600" />

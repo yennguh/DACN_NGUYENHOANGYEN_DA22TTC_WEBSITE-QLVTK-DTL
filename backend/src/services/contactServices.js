@@ -1,4 +1,5 @@
 import { CONTACTMODEL } from "../models/contactModel.js";
+import { userServices } from "./userServices.js";
 
 const createContact = async (payload) => {
     try {
@@ -12,6 +13,31 @@ const createContact = async (payload) => {
 const getContacts = async (params) => {
     try {
         const result = await CONTACTMODEL.findContacts(params);
+        
+        // Populate user info (avatar) for contacts that have userId
+        if (result.data && result.data.length > 0) {
+            const populatedData = await Promise.all(
+                result.data.map(async (contact) => {
+                    if (contact.userId) {
+                        try {
+                            const userInfo = await userServices.GetUserInfor(contact.userId);
+                            if (userInfo) {
+                                return {
+                                    ...contact,
+                                    userAvatar: userInfo.avatar || null,
+                                    userFullname: userInfo.fullname || contact.name
+                                };
+                            }
+                        } catch (err) {
+                            console.log('Error fetching user info for contact:', err);
+                        }
+                    }
+                    return contact;
+                })
+            );
+            result.data = populatedData;
+        }
+        
         return result;
     } catch (error) {
         throw error;

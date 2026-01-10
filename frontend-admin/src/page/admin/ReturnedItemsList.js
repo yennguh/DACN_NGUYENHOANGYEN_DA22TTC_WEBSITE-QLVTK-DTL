@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye, Trash2, CheckCircle, RotateCcw } from 'lucide-react';
+import { Search, Eye, Trash2, CheckCircle, RotateCcw, Crown } from 'lucide-react';
 import { getImageUrl } from '../../utils/constant';
 import { fetchPosts, deletePost, updateReturnStatus } from '../../api/posts.api';
 import AdminSection from './components/AdminSection';
@@ -10,6 +10,7 @@ export default function ReturnedItemsList() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [postTypeFilter, setPostTypeFilter] = useState('all'); // 'all', 'admin', 'user'
 
     const fetchData = async () => {
         setLoading(true);
@@ -70,6 +71,18 @@ export default function ReturnedItemsList() {
         return item.authorFullname || item.user?.fullname || 'Ẩn danh';
     };
 
+    const isAdminPost = (item) => {
+        return item.user?.roles?.includes('admin');
+    };
+
+    const filteredPosts = posts.filter(item => {
+        if (postTypeFilter === 'all') return true;
+        const isAdmin = isAdminPost(item);
+        if (postTypeFilter === 'admin') return isAdmin;
+        if (postTypeFilter === 'user') return !isAdmin;
+        return true;
+    });
+
     return (
         <AdminSection title="Đã trả đồ" description="Danh sách bài đăng đã được trả lại cho chủ nhân">
             <div className="space-y-6">
@@ -82,7 +95,7 @@ export default function ReturnedItemsList() {
                     </div>
                 </div>
 
-                {/* Search */}
+                {/* Search & Filter */}
                 <div className="flex flex-wrap items-center gap-4">
                     <div className="flex-1 relative min-w-[200px] max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -94,8 +107,35 @@ export default function ReturnedItemsList() {
                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
                         />
                     </div>
+                    {/* Filter theo loại người đăng */}
+                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+                        <button
+                            onClick={() => setPostTypeFilter('all')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                postTypeFilter === 'all' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            Tất cả
+                        </button>
+                        <button
+                            onClick={() => setPostTypeFilter('admin')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                postTypeFilter === 'admin' ? 'bg-indigo-500 text-white shadow' : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            👑 Admin
+                        </button>
+                        <button
+                            onClick={() => setPostTypeFilter('user')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                postTypeFilter === 'user' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            👤 User
+                        </button>
+                    </div>
                     <div className="text-sm text-gray-600">
-                        Tổng: <span className="font-bold text-green-600">{posts.length}</span> bài đăng
+                        Tổng: <span className="font-bold text-green-600">{filteredPosts.length}</span> bài đăng
                     </div>
                 </div>
 
@@ -109,9 +149,9 @@ export default function ReturnedItemsList() {
                         <div className="p-4 border-b bg-gradient-to-r from-green-500 to-emerald-500 text-white flex items-center gap-3">
                             <CheckCircle className="w-5 h-5" />
                             <h2 className="font-bold text-lg">✅ Đã trả đồ</h2>
-                            <span className="ml-auto bg-white/20 px-3 py-1 rounded-full text-sm font-medium">{posts.length} bài</span>
+                            <span className="ml-auto bg-white/20 px-3 py-1 rounded-full text-sm font-medium">{filteredPosts.length} bài</span>
                         </div>
-                        {posts.length === 0 ? (
+                        {filteredPosts.length === 0 ? (
                             <div className="text-center py-12 text-gray-500">Chưa có bài đăng nào được trả đồ</div>
                         ) : (
                             <div className="overflow-x-auto">
@@ -128,23 +168,31 @@ export default function ReturnedItemsList() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {posts.map((item) => {
+                                        {filteredPosts.map((item) => {
                                             const avatarUrl = getAvatarUrl(item);
                                             const displayName = getDisplayName(item);
+                                            const isAdmin = isAdminPost(item);
                                             return (
-                                                <tr key={item._id} className="hover:bg-gray-50/50 transition-colors">
+                                                <tr key={item._id} className={`hover:bg-gray-50/50 transition-colors ${isAdmin ? 'bg-indigo-50/30' : ''}`}>
                                                     <td className="py-3 px-4">
                                                         <p className="font-medium text-gray-800 max-w-[200px] truncate">{item.title}</p>
                                                     </td>
                                                     <td className="py-3 px-4">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${isAdmin ? 'bg-gradient-to-br from-indigo-400 to-purple-500' : 'bg-gradient-to-br from-green-400 to-emerald-500'}`}>
                                                                 {avatarUrl ? (
                                                                     <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
                                                                 ) : null}
                                                                 <span className={`text-white text-xs font-bold ${avatarUrl ? 'hidden' : ''}`}>{displayName.charAt(0).toUpperCase()}</span>
                                                             </div>
-                                                            <span className="text-gray-700 text-sm">{displayName}</span>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-gray-700 text-sm">{displayName}</span>
+                                                                {isAdmin && (
+                                                                    <span className="inline-flex items-center gap-1 text-xs text-indigo-600 font-medium">
+                                                                        <Crown className="w-3 h-3" /> Admin
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td className="py-3 px-4 text-gray-600 text-sm">{item.itemType}</td>

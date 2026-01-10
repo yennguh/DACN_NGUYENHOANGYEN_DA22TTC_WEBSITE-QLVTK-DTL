@@ -5,23 +5,41 @@ import { inforUser } from "../api/users.api";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(Cookies.get("accessToken") || null);
-    const [user, setUser] = useState(null);
+    const [token, setToken] = useState(() => Cookies.get("accessToken") || null);
+    const [user, setUser] = useState(() => {
+        try {
+            const savedUser = localStorage.getItem("adminUser");
+            return savedUser ? JSON.parse(savedUser) : null;
+        } catch {
+            return null;
+        }
+    });
     const [loadingUser, setLoadingUser] = useState(false);
 
     const fetchCurrentUser = async () => {
-        if (!Cookies.get("accessToken")) {
-            setUser(null);
+        const currentToken = Cookies.get("accessToken");
+        if (!currentToken) {
             return null;
         }
         setLoadingUser(true);
         try {
             const userData = await inforUser();
-            setUser(userData || null);
-            return userData || null;
+            if (userData) {
+                setUser(userData);
+                localStorage.setItem("adminUser", JSON.stringify(userData));
+                return userData;
+            }
+            return null;
         } catch (error) {
             console.error("Không thể lấy thông tin người dùng:", error);
-            setUser(null);
+            // Nếu lỗi 401, xóa token và user
+            if (error.response?.status === 401) {
+                Cookies.remove("accessToken");
+                Cookies.remove("refreshToken");
+                localStorage.removeItem("adminUser");
+                setToken(null);
+                setUser(null);
+            }
             return null;
         } finally {
             setLoadingUser(false);
@@ -31,28 +49,37 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         if (token) {
             fetchCurrentUser();
-        } else {
-            setUser(null);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     const login = async (accessToken, refreshToken) => {
-        Cookies.set("accessToken", accessToken);
-        if (refreshToken) Cookies.set("refreshToken", refreshToken);
+        Cookies.set("accessToken", accessToken, { expires: 7 });
+        if (refreshToken) {
+            Cookies.set("refreshToken", refreshToken, { expires: 30 });
+        }
         setToken(accessToken);
-        await fetchCurrentUser();
+        // Fetch user sau khi set token
+        const userData = await inforUser();
+        if (userData) {
+            setUser(userData);
+            localStorage.setItem("adminUser", JSON.stringify(userData));
+        }
     };
 
     const logout = () => {
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
+        localStorage.removeItem("adminUser");
         setToken(null);
         setUser(null);
     };
 
     const setUserInfo = (userData) => {
         setUser(userData);
+        if (userData) {
+            localStorage.setItem("adminUser", JSON.stringify(userData));
+        }
     };
 
     return (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Send, Clock, User, MessageSquare, Image, X } from 'lucide-react';
 import { fetchContacts, addReply, updateContact } from '../../api/contact.api';
+import { getImageUrl } from '../../utils/constant';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8017';
 
@@ -220,17 +221,34 @@ export default function ContactMessages() {
                                                 <span className="ml-2 w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></span>
                                             )}
                                         </div>
-                                        <div className="text-sm text-gray-600 truncate mb-1">
-                                            <span className="font-medium">{contact.name}</span>
-                                            <span className="text-gray-400 mx-1">•</span>
-                                            <span>{contact.email}</span>
-                                        </div>
-                                        <div className="text-sm text-gray-600 truncate mb-2">
-                                            {lastMessage?.substring(0, 50)}{lastMessage?.length > 50 ? '...' : ''}
-                                        </div>
-                                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {formatTime(lastTime)}
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white flex-shrink-0 overflow-hidden">
+                                                {contact.userAvatar ? (
+                                                    <img 
+                                                        src={getImageUrl(contact.userAvatar)} 
+                                                        alt={contact.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <span className="text-sm font-bold">
+                                                        {contact.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm text-gray-600 truncate mb-1">
+                                                    <span className="font-medium">{contact.name}</span>
+                                                    <span className="text-gray-400 mx-1">•</span>
+                                                    <span>{contact.email}</span>
+                                                </div>
+                                                <div className="text-sm text-gray-600 truncate mb-2">
+                                                    {lastMessage?.substring(0, 50)}{lastMessage?.length > 50 ? '...' : ''}
+                                                </div>
+                                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    {formatTime(lastTime)}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -246,8 +264,16 @@ export default function ContactMessages() {
                             {/* Header */}
                             <div className="p-4 border-b bg-gray-50">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                                        <User className="w-6 h-6" />
+                                    <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                                        {selectedContact.userAvatar ? (
+                                            <img 
+                                                src={getImageUrl(selectedContact.userAvatar)} 
+                                                alt={selectedContact.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <User className="w-6 h-6" />
+                                        )}
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="font-semibold text-gray-800">{selectedContact.name}</h3>
@@ -266,8 +292,22 @@ export default function ContactMessages() {
                             {/* Messages */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" style={{ maxHeight: 'calc(100vh - 320px)' }}>
                                 {/* First message from user */}
-                                <div className="flex justify-start">
+                                <div className="flex justify-start items-end gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white flex-shrink-0 overflow-hidden">
+                                        {selectedContact.userAvatar ? (
+                                            <img 
+                                                src={getImageUrl(selectedContact.userAvatar)} 
+                                                alt={selectedContact.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-xs font-bold">
+                                                {selectedContact.name?.charAt(0)?.toUpperCase() || 'U'}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="max-w-[70%]">
+                                        <div className="text-xs text-gray-500 mb-1 ml-1">{selectedContact.name}</div>
                                         <div className="bg-white border rounded-2xl rounded-tl-none px-4 py-2 shadow-sm">
                                             <p className="text-sm text-gray-800">{selectedContact.message}</p>
                                         </div>
@@ -281,9 +321,27 @@ export default function ContactMessages() {
                                 {selectedContact.replies?.map((reply, index) => (
                                     <div
                                         key={index}
-                                        className={`flex ${reply.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
+                                        className={`flex items-end gap-2 ${reply.sender === 'admin' ? 'justify-end' : 'justify-start'}`}
                                     >
+                                        {reply.sender !== 'admin' && (
+                                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white flex-shrink-0 overflow-hidden">
+                                                {selectedContact.userAvatar ? (
+                                                    <img 
+                                                        src={getImageUrl(selectedContact.userAvatar)} 
+                                                        alt={selectedContact.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <span className="text-xs font-bold">
+                                                        {selectedContact.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                         <div className="max-w-[70%]">
+                                            <div className={`text-xs text-gray-500 mb-1 ${reply.sender === 'admin' ? 'text-right mr-1' : 'ml-1'}`}>
+                                                {reply.sender === 'admin' ? (reply.senderName || 'Admin') : selectedContact.name}
+                                            </div>
                                             <div
                                                 className={`rounded-2xl px-4 py-2 shadow-sm ${
                                                     reply.sender === 'admin'
@@ -306,6 +364,21 @@ export default function ContactMessages() {
                                                 {formatFullDate(reply.createdAt)}
                                             </div>
                                         </div>
+                                        {reply.sender === 'admin' && (
+                                            <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white flex-shrink-0 overflow-hidden">
+                                                {reply.senderAvatar ? (
+                                                    <img 
+                                                        src={getImageUrl(reply.senderAvatar)} 
+                                                        alt={reply.senderName || 'Admin'}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <span className="text-xs font-bold">
+                                                        {(reply.senderName || 'A').charAt(0).toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                                 <div ref={messagesEndRef} />

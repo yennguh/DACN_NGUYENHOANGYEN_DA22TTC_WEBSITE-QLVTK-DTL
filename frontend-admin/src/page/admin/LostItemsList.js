@@ -13,6 +13,7 @@ export default function LostItemsList() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [postTypeFilter, setPostTypeFilter] = useState('all'); // 'all', 'admin', 'user'
 
     // Lấy danh sách postId bị tố cáo (chưa xử lý)
     const reportedPostIds = reports.filter(r => r.status === 'pending' || r.status === 'reviewed').map(r => r.postId);
@@ -145,6 +146,17 @@ export default function LostItemsList() {
     // Kiểm tra xem bài đăng có phải của admin không
     const isAdminPost = (item) => {
         return item.isAdminPost || item.user?.roles?.includes('admin') || item.authorFullname?.toLowerCase() === 'admin';
+    };
+
+    // Filter posts theo loại người đăng
+    const filterByPostType = (items) => {
+        if (postTypeFilter === 'all') return items;
+        return items.filter(item => {
+            const isAdmin = isAdminPost(item);
+            if (postTypeFilter === 'admin') return isAdmin;
+            if (postTypeFilter === 'user') return !isAdmin;
+            return true;
+        });
     };
 
     // Component bảng dùng chung
@@ -318,6 +330,33 @@ export default function LostItemsList() {
                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                     </div>
+                    {/* Filter theo loại người đăng */}
+                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+                        <button
+                            onClick={() => setPostTypeFilter('all')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                postTypeFilter === 'all' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            Tất cả
+                        </button>
+                        <button
+                            onClick={() => setPostTypeFilter('admin')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                postTypeFilter === 'admin' ? 'bg-indigo-500 text-white shadow' : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            👑 Admin
+                        </button>
+                        <button
+                            onClick={() => setPostTypeFilter('user')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                postTypeFilter === 'user' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                        >
+                            👤 User
+                        </button>
+                    </div>
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -341,9 +380,9 @@ export default function LostItemsList() {
                 ) : (
                     <>
                         {/* Bảng Chờ duyệt */}
-                        {pendingPosts.length > 0 && (
+                        {filterByPostType(pendingPosts).length > 0 && (
                             <PostTable 
-                                data={pendingPosts} 
+                                data={filterByPostType(pendingPosts)} 
                                 title="⏳ Chờ duyệt" 
                                 icon={RotateCcw}
                                 headerColor="bg-gradient-to-r from-amber-500 to-yellow-500 text-white"
@@ -351,9 +390,9 @@ export default function LostItemsList() {
                         )}
 
                         {/* Bảng Bài đăng bị tố cáo */}
-                        {reportedPosts.length > 0 && (
+                        {filterByPostType(reportedPosts).length > 0 && (
                             <PostTable 
-                                data={reportedPosts} 
+                                data={filterByPostType(reportedPosts)} 
                                 title="🚨 Bài đăng bị tố cáo" 
                                 icon={Flag}
                                 headerColor="bg-gradient-to-r from-rose-500 to-red-600 text-white"
@@ -363,9 +402,9 @@ export default function LostItemsList() {
                         )}
 
                         {/* Bảng Bài đăng bị cấm */}
-                        {bannedPosts.length > 0 && (
+                        {filterByPostType(bannedPosts).length > 0 && (
                             <PostTable 
-                                data={bannedPosts} 
+                                data={filterByPostType(bannedPosts)} 
                                 title="🚫 Bài đăng bị cấm" 
                                 icon={Ban}
                                 headerColor="bg-gradient-to-r from-gray-600 to-gray-800 text-white"
@@ -374,9 +413,9 @@ export default function LostItemsList() {
                         )}
 
                         {/* Bảng Bài đăng được chia sẻ */}
-                        {sharedPosts.length > 0 && (
+                        {filterByPostType(sharedPosts).length > 0 && (
                             <PostTable 
-                                data={sharedPosts} 
+                                data={filterByPostType(sharedPosts)} 
                                 title="🔗 Bài đăng được chia sẻ" 
                                 icon={Share2}
                                 headerColor="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
@@ -385,7 +424,7 @@ export default function LostItemsList() {
 
                         {/* Bảng Đồ bị mất */}
                         <PostTable 
-                            data={lostPosts} 
+                            data={filterByPostType(lostPosts)} 
                             title="🔍 Đồ bị mất" 
                             icon={CircleAlert}
                             headerColor="bg-gradient-to-r from-red-500 to-orange-500 text-white"
@@ -393,7 +432,7 @@ export default function LostItemsList() {
 
                         {/* Bảng Đồ nhặt được */}
                         <PostTable 
-                            data={foundPosts} 
+                            data={filterByPostType(foundPosts)} 
                             title="✨ Đồ nhặt được" 
                             icon={HandHelping}
                             headerColor="bg-gradient-to-r from-green-500 to-teal-500 text-white"
@@ -401,7 +440,7 @@ export default function LostItemsList() {
 
                         {/* Bảng Đã trả đồ */}
                         <PostTable 
-                            data={returnedPosts} 
+                            data={filterByPostType(returnedPosts)} 
                             title="✅ Đã trả đồ" 
                             icon={CheckCircle}
                             headerColor="bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
