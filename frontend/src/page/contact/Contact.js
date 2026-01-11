@@ -662,11 +662,13 @@ const Contact = () => {
                                                 {reply.sender !== 'admin' && (
                                                     <div className="flex-shrink-0 ml-2">
                                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
-                                                            {userInfo?.avatar ? (
+                                                            {reply.senderAvatar ? (
+                                                                <img src={getImageUrl(reply.senderAvatar)} alt="" className="w-full h-full object-cover" />
+                                                            ) : userInfo?.avatar ? (
                                                                 <img src={getImageUrl(userInfo.avatar)} alt="" className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <span className="text-white font-bold text-sm">
-                                                                    {(userInfo?.fullname || user?.fullname || 'U').charAt(0).toUpperCase()}
+                                                                    {(reply.senderName || userInfo?.fullname || user?.fullname || 'U').charAt(0).toUpperCase()}
                                                                 </span>
                                                             )}
                                                         </div>

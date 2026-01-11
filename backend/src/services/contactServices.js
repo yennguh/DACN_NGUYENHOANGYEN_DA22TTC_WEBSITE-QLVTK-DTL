@@ -73,8 +73,41 @@ const addReply = async (contactId, replyData) => {
 
 const getContactByUserId = async (userId) => {
     try {
-        const result = await CONTACTMODEL.getContactByUserId(userId);
-        return result;
+        const contacts = await CONTACTMODEL.getContactByUserId(userId);
+        
+        // Populate senderAvatar cho các reply từ admin
+        if (contacts && contacts.length > 0) {
+            const populatedContacts = await Promise.all(
+                contacts.map(async (contact) => {
+                    if (contact.replies && contact.replies.length > 0) {
+                        const populatedReplies = await Promise.all(
+                            contact.replies.map(async (reply) => {
+                                if (reply.sender === 'admin' && reply.senderId && !reply.senderAvatar) {
+                                    try {
+                                        const adminInfo = await userServices.GetUserInfor(reply.senderId);
+                                        if (adminInfo) {
+                                            return {
+                                                ...reply,
+                                                senderAvatar: adminInfo.avatar || null,
+                                                senderName: adminInfo.fullname || reply.senderName || 'Admin'
+                                            };
+                                        }
+                                    } catch (err) {
+                                        console.log('Error fetching admin info for reply:', err);
+                                    }
+                                }
+                                return reply;
+                            })
+                        );
+                        return { ...contact, replies: populatedReplies };
+                    }
+                    return contact;
+                })
+            );
+            return populatedContacts;
+        }
+        
+        return contacts;
     } catch (error) {
         throw error;
     }

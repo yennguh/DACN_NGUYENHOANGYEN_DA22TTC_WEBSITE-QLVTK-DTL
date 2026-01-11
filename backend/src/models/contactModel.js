@@ -32,8 +32,9 @@ const REPLY_SCHEMA = Joi.object({
     message: Joi.string().allow('').optional(),
     image: Joi.string().optional(), // URL ảnh đính kèm
     sender: Joi.string().valid('user', 'admin').required(),
-    senderId: Joi.string().optional(),
+    senderId: Joi.string().optional().allow(null),
     senderName: Joi.string().optional(),
+    senderAvatar: Joi.string().optional().allow(null), // Avatar của người gửi
     createdAt: Joi.date().timestamp('javascript').default(Date.now)
 });
 

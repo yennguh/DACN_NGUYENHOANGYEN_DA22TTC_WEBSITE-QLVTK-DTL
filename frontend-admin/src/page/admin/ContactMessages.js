@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, Clock, User, MessageSquare, Image, X, Trash2, Ban, UserX, CheckCircle } from 'lucide-react';
-import { fetchContacts, addReply, updateContact, deleteContact } from '../../api/contact.api';
+import { Search, Send, Clock, User, MessageSquare, Image, X, Ban, UserX, CheckCircle } from 'lucide-react';
+import { fetchContacts, addReply, updateContact } from '../../api/contact.api';
 import { blockUserFromContact, unblockUserFromContact } from '../../api/users.api';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8017';
@@ -16,8 +16,6 @@ export default function ContactMessages() {
     const [sending, setSending] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [contactToDelete, setContactToDelete] = useState(null);
     const [activeTab, setActiveTab] = useState('messages');
     const [showBlockModal, setShowBlockModal] = useState(false);
     const [userToBlock, setUserToBlock] = useState(null);
@@ -172,23 +170,7 @@ export default function ContactMessages() {
         }
     };
 
-    // Xóa hoàn toàn (cả 2 bên không thấy)
-    const handleDeleteContact = async () => {
-        if (!contactToDelete) return;
-        try {
-            await deleteContact(contactToDelete._id);
-            setShowDeleteModal(false);
-            setContactToDelete(null);
-            setSelectedContact(null);
-            // Refresh cả 2 tab
-            await refreshAllData();
-            alert('Đã xóa tin nhắn (cả 2 bên)');
-        } catch (error) {
-            alert('Có lỗi xảy ra');
-        }
-    };
-
-    // Chặn user - tin nhắn chuyển sang tab "Đã chặn"
+    // Chặn user - tin nhắn chuyển sang tab "Tài khoản bị chặn"
     const openBlockModal = (contact) => {
         if (!contact.userId) {
             alert('Không thể chặn người dùng này (không có thông tin tài khoản)');
@@ -207,7 +189,7 @@ export default function ContactMessages() {
             setSelectedContact(null);
             // Refresh cả 2 tab để cập nhật số lượng
             await refreshAllData();
-            alert('Đã chặn tài khoản - tin nhắn đã chuyển sang tab "Tài khoản đã chặn"');
+            alert('Đã chặn tài khoản - tin nhắn đã chuyển sang tab "Tài khoản bị chặn"');
         } catch (error) {
             alert(error.response?.data?.message || 'Có lỗi xảy ra khi chặn tài khoản');
         }
@@ -287,7 +269,7 @@ export default function ContactMessages() {
                         }`}
                     >
                         <UserX className="w-4 h-4 inline mr-2" />
-                        Tài khoản đã chặn ({blockedContacts.length})
+                        Tài khoản bị chặn ({blockedContacts.length})
                     </button>
                 </div>
             </div>
@@ -406,38 +388,20 @@ export default function ContactMessages() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {activeTab === 'messages' ? (
-                                            <>
-                                                <button
-                                                    onClick={() => openBlockModal(selectedContact)}
-                                                    className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
-                                                    title="Chặn tài khoản"
-                                                >
-                                                    <Ban className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => { setContactToDelete(selectedContact); setShowDeleteModal(true); }}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Xóa tin nhắn (cả 2 bên)"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </>
+                                            <button
+                                                onClick={() => openBlockModal(selectedContact)}
+                                                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm flex items-center gap-2"
+                                                title="Chặn tài khoản"
+                                            >
+                                                <Ban className="w-4 h-4" /> Chặn
+                                            </button>
                                         ) : (
-                                            <>
-                                                <button
-                                                    onClick={() => handleUnblockUser(selectedContact)}
-                                                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-2"
-                                                >
-                                                    <CheckCircle className="w-4 h-4" /> Bỏ chặn
-                                                </button>
-                                                <button
-                                                    onClick={() => { setContactToDelete(selectedContact); setShowDeleteModal(true); }}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Xóa tin nhắn"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </>
+                                            <button
+                                                onClick={() => handleUnblockUser(selectedContact)}
+                                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-2"
+                                            >
+                                                <CheckCircle className="w-4 h-4" /> Bỏ chặn
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -547,40 +511,6 @@ export default function ContactMessages() {
                 </div>
             </div>
 
-            {/* Modal xóa tin nhắn */}
-            {showDeleteModal && contactToDelete && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-gray-800">Xóa tin nhắn</h3>
-                            <button onClick={() => { setShowDeleteModal(false); setContactToDelete(null); }} className="p-1 hover:bg-gray-100 rounded-full">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        
-                        <p className="text-gray-600 mb-6">
-                            Bạn có chắc muốn xóa tin nhắn "<span className="font-semibold">{contactToDelete.subject}</span>"?
-                            <br /><span className="text-red-500 text-sm">Tin nhắn sẽ bị xóa hoàn toàn (cả 2 bên không thấy nữa)</span>
-                        </p>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => { setShowDeleteModal(false); setContactToDelete(null); }}
-                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={handleDeleteContact}
-                                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-4 h-4" /> Xóa
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Modal chặn tài khoản */}
             {showBlockModal && userToBlock && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -608,7 +538,7 @@ export default function ContactMessages() {
 
                         <p className="text-gray-600 mb-6">
                             Khi chặn tài khoản này:
-                            <br />• Tin nhắn sẽ chuyển sang tab "Tài khoản đã chặn"
+                            <br />• Tin nhắn sẽ chuyển sang tab "Tài khoản bị chặn"
                             <br />• Người dùng không thể gửi tin nhắn mới
                         </p>
 

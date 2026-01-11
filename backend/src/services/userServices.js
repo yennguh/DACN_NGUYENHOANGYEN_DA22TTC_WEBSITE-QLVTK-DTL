@@ -15,14 +15,12 @@ const CreatedUser = async (payload) => {
 
 const GetUserInfor = async (id) => {
     try {
-        const result = USERMODEL.FindUserById(id);
-        return result
-
+        const result = await USERMODEL.FindUserById(id);
+        return result;
     }
     catch (error) {
-        throw error
+        throw error;
     }
-
 }
 
 const Login_User = async (payload) => {
