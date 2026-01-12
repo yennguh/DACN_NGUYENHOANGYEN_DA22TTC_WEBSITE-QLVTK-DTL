@@ -14,6 +14,7 @@ router.get('/my-contacts', isAuth, contactController.getMyContacts);
 // User routes - xóa/thu hồi tin nhắn của mình
 router.patch('/:id/hide-user', isAuth, contactController.hideForUser);
 router.delete('/:id/recall', isAuth, contactController.recallContact);
+router.delete('/:id/reply/:replyIndex', isAuth, contactController.deleteReply);
 
 // Admin routes - require authentication
 router.get('/', isAuth, contactController.getContacts);

@@ -261,6 +261,47 @@ const recallContact = async (req, res, next) => {
     }
 };
 
+// Xóa một reply cụ thể (admin hoặc user sở hữu)
+const deleteReply = async (req, res, next) => {
+    try {
+        const decoded = req.jwtDecoded;
+        if (!decoded || !decoded._id) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
+        }
+
+        const { id, replyIndex } = req.params;
+        const index = parseInt(replyIndex);
+        
+        const contact = await contactServices.getContactById(id);
+        if (!contact) {
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Contact not found' });
+        }
+
+        if (!contact.replies || index < 0 || index >= contact.replies.length) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid reply index' });
+        }
+
+        const reply = contact.replies[index];
+        const isAdmin = decoded.roles?.includes('admin');
+        const userId = typeof decoded._id === 'string' ? decoded._id : decoded._id.toString();
+        
+        // Admin có thể xóa mọi reply, user chỉ xóa reply của mình
+        if (!isAdmin && reply.senderId !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({ message: 'You can only delete your own replies' });
+        }
+
+        // Xóa reply khỏi mảng
+        contact.replies.splice(index, 1);
+        await contactServices.updateContact(id, { replies: contact.replies });
+
+        res.status(StatusCodes.OK).json({
+            message: 'Reply deleted successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const contactController = {
     createContact,
     getContacts,
@@ -270,6 +311,7 @@ export const contactController = {
     deleteContact,
     hideForAdmin,
     hideForUser,
-    recallContact
+    recallContact,
+    deleteReply
 };
 

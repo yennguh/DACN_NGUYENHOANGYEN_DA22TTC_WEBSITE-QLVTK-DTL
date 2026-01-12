@@ -87,3 +87,14 @@ export const getContactById = async (id) => {
     }
 };
 
+// Xóa một reply cụ thể (admin)
+export const deleteReply = async (contactId, replyIndex) => {
+    try {
+        const response = await api.delete(`/v1/contact/${contactId}/reply/${replyIndex}`);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi xóa tin nhắn:", error.response?.data || error.message);
+        throw error;
+    }
+};
+
